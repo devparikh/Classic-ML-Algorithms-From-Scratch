@@ -21,9 +21,6 @@ input_dataframe = df[["Annual Income (k$)", "Spending Score (1-100)"]]
 x = df["Annual Income (k$)"]
 y = df["Spending Score (1-100)"]
 
-plt.scatter(x, y, s=5)
-#plt.show()
-
 '''Building K-Means Clustering Model'''
 
 # Model Parameters
@@ -66,5 +63,4 @@ def centroid_initialization(k, input_data):
         centroids.append(centroid)
         points.remove(centroid)
 
-   
 centroid_initialization(number_of_clusters, input_dataframe)
