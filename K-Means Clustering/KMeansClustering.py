@@ -48,15 +48,15 @@ def centroid_initialization(k, input_data):
     centroids.append(centroid)
     points.remove(centroid)
 
-    while len(centroids) != k:
+    while len(centroids) <= k - 1:
+        distance_from_nearest_point = []
         for point in points:
-            point_nearest_centroid = []
+            point_nearest_centroid = [] 
             for centroid in centroids:
-                distance_squared = (centroid[0] - point[0])**2 + (centroid[1] - point[1])**2
+                distance_squared = (point[0] - centroid[0])**2 + (point[1] - centroid[1])**2
                 point_nearest_centroid.append(distance_squared)
-                
-            nearest_centroid = centroids[point_nearest_centroid.index(min(point_nearest_centroid))]
-            distance_from_nearest_point = []
+
+            nearest_centroid = min(point_nearest_centroid)
             distance_from_nearest_point.append(nearest_centroid)
 
         centroid = points[distance_from_nearest_point.index(max(distance_from_nearest_point))]
@@ -64,3 +64,20 @@ def centroid_initialization(k, input_data):
         points.remove(centroid)
 
 centroid_initialization(number_of_clusters, input_dataframe)
+
+
+def K_Means_Clustering(k, centroids, input_data, iterations=100):
+    clusters = []
+    i = 0
+    while i < 5:
+        i += 1
+        clusters.append([])
+
+    for point in points:
+        distance_to_centroids = []
+        for centroid in centroids:                                                                                                                                                                                                                      
+            distance_squared = (centroid[0] - point[0])**2 + (centroid[1] - point[1])**2
+            distance_to_centroids.append(distance_squared)
+
+        nearest_cluster = clusters[distance_to_centroids.index(min(distance_to_centroids))]
+        nearest_cluster.append(point)
