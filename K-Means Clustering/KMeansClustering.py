@@ -21,12 +21,15 @@ input_dataframe = df[["Annual Income (k$)", "Spending Score (1-100)"]]
 x = df["Annual Income (k$)"]
 y = df["Spending Score (1-100)"]
 
+plt.scatter(x, y, s=5)
+#plt.show()
+
 '''Building K-Means Clustering Model'''
 
 # Model Parameters
 number_of_clusters = 5
 
-def centroid_initialization(k, input_data):
+def Centroid_Initialization(k, input_data):
     # Centroid Initialization through KMeans++
     global points
     global centroids
@@ -63,17 +66,14 @@ def centroid_initialization(k, input_data):
         centroids.append(centroid)
         points.remove(centroid)
 
-centroid_initialization(number_of_clusters, input_dataframe)
-
-
 def K_Means_Clustering(k, centroids, input_data, iterations=100):
     clusters = []
     i = 0
-    while i < 5:
+    while i < k:
         i += 1
         clusters.append([])
 
-    for point in points:
+    for point in input_data:
         distance_to_centroids = []
         for centroid in centroids:                                                                                                                                                                                                                      
             distance_squared = (centroid[0] - point[0])**2 + (centroid[1] - point[1])**2
@@ -81,3 +81,23 @@ def K_Means_Clustering(k, centroids, input_data, iterations=100):
 
         nearest_cluster = clusters[distance_to_centroids.index(min(distance_to_centroids))]
         nearest_cluster.append(point)
+
+    x_values = []
+    y_values = []
+    for cluster in range(0, len(clusters)):
+        for point in clusters[cluster]:
+            x = point[0]
+            x_values.append(x)
+
+            y = point[1]
+            y_values.append(y)
+
+            average_x = sum(x_values) / len(x_values)
+            average_y = sum(y_values) / len(y_values)
+            
+            centroids[cluster] = [average_x, average_y]
+    
+
+# Running K-Means Clustering
+Centroid_Initialization(number_of_clusters, input_dataframe)
+K_Means_Clustering(number_of_clusters, centroids, points)
