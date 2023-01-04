@@ -28,6 +28,7 @@ plt.scatter(x, y, s=5)
 
 # Model Parameters
 number_of_clusters = 5
+iterations = 2000
 
 def Centroid_Initialization(k, input_data):
     # Centroid Initialization through KMeans++
@@ -49,7 +50,6 @@ def Centroid_Initialization(k, input_data):
     centroids = []
     centroid = random.choice(points)
     centroids.append(centroid)
-    points.remove(centroid)
 
     while len(centroids) <= k - 1:
         distance_from_nearest_point = []
@@ -64,9 +64,9 @@ def Centroid_Initialization(k, input_data):
 
         centroid = points[distance_from_nearest_point.index(max(distance_from_nearest_point))]
         centroids.append(centroid)
-        points.remove(centroid)
 
-def K_Means_Clustering(k, centroids, input_data, iterations=100):
+def K_Means_Clustering(k, centroids, input_data):
+    global clusters
     clusters = []
     i = 0
     while i < k:
@@ -82,9 +82,9 @@ def K_Means_Clustering(k, centroids, input_data, iterations=100):
         nearest_cluster = clusters[distance_to_centroids.index(min(distance_to_centroids))]
         nearest_cluster.append(point)
 
-    x_values = []
-    y_values = []
     for cluster in range(0, len(clusters)):
+        x_values = []
+        y_values = []
         for point in clusters[cluster]:
             x = point[0]
             x_values.append(x)
@@ -92,12 +92,23 @@ def K_Means_Clustering(k, centroids, input_data, iterations=100):
             y = point[1]
             y_values.append(y)
 
-            average_x = sum(x_values) / len(x_values)
-            average_y = sum(y_values) / len(y_values)
             
-            centroids[cluster] = [average_x, average_y]
-    
+        average_x = sum(x_values) / len(x_values)
+        average_y = sum(y_values) / len(y_values)
+            
+        centroids[cluster] = [average_x, average_y]
 
-# Running K-Means Clustering
-Centroid_Initialization(number_of_clusters, input_dataframe)
-K_Means_Clustering(number_of_clusters, centroids, points)
+'''Training K-Means'''
+
+def training_KMeans(k, input_data, max_iters):
+    # Centroids Initialization through K-Means++
+    Centroid_Initialization(k, input_data)
+
+    # Iteratively Running the K-Means Algorithm for the number of iterations set 
+    # Instead of relying on iterations, need to use other more accurate characteristics to figure out best point to stop running
+    iterations = 0
+    while iterations <= max_iters:
+        K_Means_Clustering(k, centroids, points)
+        iterations += 1
+
+training_KMeans(number_of_clusters, input_dataframe, iterations)
