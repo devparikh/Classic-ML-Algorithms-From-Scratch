@@ -1,7 +1,6 @@
 # Implementing K-Means Clustering from Scratch
 
 # Importing Libraries
-import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import random 
@@ -21,14 +20,12 @@ input_dataframe = df[["Annual Income (k$)", "Spending Score (1-100)"]]
 x = df["Annual Income (k$)"]
 y = df["Spending Score (1-100)"]
 
-plt.scatter(x, y, s=5)
-#plt.show()
-
 '''Building K-Means Clustering Model'''
 
 # Model Parameters
 number_of_clusters = 5
-iterations = 2000
+iterations = 100
+sse = []
 
 def Centroid_Initialization(k, input_data):
     # Centroid Initialization through KMeans++
@@ -56,7 +53,7 @@ def Centroid_Initialization(k, input_data):
         for point in points:
             point_nearest_centroid = [] 
             for centroid in centroids:
-                distance_squared = (point[0] - centroid[0])**2 + (point[1] - centroid[1])**2
+                distance_squared = (centroid[0] - point[0])**2 + (centroid[1] - point[1])**2
                 point_nearest_centroid.append(distance_squared)
 
             nearest_centroid = min(point_nearest_centroid)
@@ -67,6 +64,8 @@ def Centroid_Initialization(k, input_data):
 
 def K_Means_Clustering(k, centroids, input_data):
     global clusters
+    global inertia  
+
     clusters = []
     i = 0
     while i < k:
@@ -82,9 +81,11 @@ def K_Means_Clustering(k, centroids, input_data):
         nearest_cluster = clusters[distance_to_centroids.index(min(distance_to_centroids))]
         nearest_cluster.append(point)
 
+    intercluster_distances = []
     for cluster in range(0, len(clusters)):
         x_values = []
         y_values = []
+        distances_to_centroid = []
         for point in clusters[cluster]:
             x = point[0]
             x_values.append(x)
@@ -92,23 +93,63 @@ def K_Means_Clustering(k, centroids, input_data):
             y = point[1]
             y_values.append(y)
 
+            centroid = centroids[cluster]
+
+            distance_to_centroid = (centroid[0] - point[0])**2 + (centroid[1] - point[1])**2
+            distances_to_centroid.append(distance_to_centroid)
             
         average_x = sum(x_values) / len(x_values)
         average_y = sum(y_values) / len(y_values)
             
         centroids[cluster] = [average_x, average_y]
 
-'''Training K-Means'''
+        intercluster_distance = sum(distances_to_centroid)
+        intercluster_distances.append(intercluster_distance)
+    
+    inertia = sum(intercluster_distances)
+    sse.append(inertia)
+
+'''Training K-Means + Results'''
+
+def displaying_cluster(centroids, output_data):
+    x_cent = []
+    y_cent = []
+
+    for centroid in centroids:
+        x = centroid[0]     
+        y = centroid[1]          
+
+        x_cent.append(x)
+        y_cent.append(y)
+
+    plt.scatter(x_cent, y_cent)    
+
+    for cluster in output_data:
+        x_val = []
+        y_val = []
+
+        for point in cluster:
+            x = point[0]
+            y = point[1]
+
+            x_val.append(x)
+            y_val.append(y)
+
+        plt.scatter(x_val, y_val)
+
+    plt.show()
 
 def training_KMeans(k, input_data, max_iters):
     # Centroids Initialization through K-Means++
     Centroid_Initialization(k, input_data)
 
-    # Iteratively Running the K-Means Algorithm for the number of iterations set 
-    # Instead of relying on iterations, need to use other more accurate characteristics to figure out best point to stop running
+    # Iteratively Running the K-Means Algorithm until the max iterations are reached, or the centroids do not change for multiple iterations
     iterations = 0
     while iterations <= max_iters:
-        K_Means_Clustering(k, centroids, points)
+        K_Means_Clustering(number_of_clusters, centroids, points)
         iterations += 1
-
+    
+    # Displaying Clusted Data Points
+    displaying_cluster(centroids, clusters)
+        
 training_KMeans(number_of_clusters, input_dataframe, iterations)
