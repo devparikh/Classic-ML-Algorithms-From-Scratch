@@ -4,11 +4,10 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import random 
-
 # Loading the Mall Customers Data CSV File
 df = pd.read_csv("Mall_Customers.csv")
 
-# For simplicity we are just going to take 2 dimensions(for easier visualization & clustering) from the 4 dimensions
+# For simplicity we are just going to take 2 dimensions(for easier visualization & clustering) from the 4 dimensions, with one indepedent variable and the other dependent variable 
 # Indepedent Variable - Annual Income in (k$)
 # Dependent Variable - Spending Score (1-100)
 
@@ -21,7 +20,6 @@ y = df["Spending Score (1-100)"]
 
 # Model Parameters
 number_of_clusters = 7
-iterations = 100
 
 def Centroid_Initialization(k, input_data):
     # Centroid Initialization through KMeans++
@@ -44,8 +42,11 @@ def Centroid_Initialization(k, input_data):
     centroid = random.choice(points)
     centroids.append(centroid)
 
+    # Initializing the rest of the centroids for KMeans
     while len(centroids) <= k - 1:
         distance_from_nearest_point = []
+        # Iterating over each point, finding it's nearest cluster from all initialized centroids
+        # Then, finding the point furthest from it's nearest cluster to be the next centroid
         for point in points:
             point_nearest_centroid = [] 
             for centroid in centroids:
@@ -58,16 +59,17 @@ def Centroid_Initialization(k, input_data):
         centroid = points[distance_from_nearest_point.index(max(distance_from_nearest_point))]
         centroids.append(centroid)
 
-
 def K_Means_Clustering(k, centroids, input_data):
     global clusters
 
+    # Initializing clusters to hold the points allocated to k clusters
     clusters = []
     i = 0
-    while i < k:
+    while i <= k - 1:
         i += 1
         clusters.append([])
 
+    # Finding the nearest cluster for every point, and appending it to the cluster
     for point in input_data:
         distance_to_centroids = []
         for centroid in centroids:                                                                                                                                                                                                                      
@@ -77,6 +79,7 @@ def K_Means_Clustering(k, centroids, input_data):
         nearest_cluster = clusters[distance_to_centroids.index(min(distance_to_centroids))]
         nearest_cluster.append(point)
 
+    # Re-calculating centroids by finding the mean of all points in the cluster
     for cluster in range(0, len(clusters)):
         x_values = []
         y_values = []
@@ -101,42 +104,59 @@ def displaying_cluster(centroids, output_data):
     x_cent = []
     y_cent = []
 
-    for centroid in centroids:
-        x = centroid[0]     
-        y = centroid[1]          
+    for centroid in centroids:  
+        # Separating the x and y value of each centroid position   
+        x_cent.append(centroid[0])
+        y_cent.append(centroid[1])
 
-        x_cent.append(x)
-        y_cent.append(y)
+    # Plotting the centroids on a scatter plot
+    plt.scatter(x_cent, y_cent) 
 
-    plt.scatter(x_cent, y_cent)    
+    x_cent.clear()   
+    y_cent.clear()
 
+    # Repeating the process for all points(that aren't centroids) in the clusters
     for cluster in output_data:
         x_val = []
         y_val = []
 
         for point in cluster:
-            x = point[0]
-            y = point[1]
-
-            x_val.append(x)
-            y_val.append(y)
+            x_val.append(point[0])
+            y_val.append(point[1])
 
         plt.scatter(x_val, y_val)
+
+    x_val.clear()
+    y_val.clear()
+    
         
-    plt.savefig("clustered_output.png")
     plt.show()
     
-def training_KMeans(k, input_data, max_iters):
+def training_KMeans(k, input_data):
     # Centroids Initialization through K-Means++
     Centroid_Initialization(k, input_data)
 
-    # Iteratively Running the K-Means Algorithm until the max iterations are reached, or the centroids do not change for multiple iterations
-    iterations = 0
-    while iterations <= max_iters:
+    # Iteratively Running the K-Means Algorithm until the centroids of the clusters do not change for 2 consecutive iterations
+    # 2 consecutive iterations lead to the best results in the least number of iterations, compared to a greater range like 3 or 5. 
+
+    change_in_centroid = []
+    changing = True
+    while changing != False:
         K_Means_Clustering(number_of_clusters, centroids, points)
-        iterations += 1
+
+        # Recording the k centroids for all iterations until current iteration
+        change_in_centroid.append([centroids])
+        # For every iteration, select the last 2 elements of the change_in_centroid list to check for changes
+        change_range = change_in_centroid[-2:]
+
+        # Checking for changes in centroid positions
+        for cent in change_range[:-1]:
+            if cent == change_range[-1]:
+                changing = False
+            else:
+                changing = True
         
-training_KMeans(number_of_clusters, input_dataframe, iterations)
+training_KMeans(number_of_clusters, input_dataframe)
 
 # Displaying Clustred Data Points:
 displaying_cluster(centroids, clusters)
