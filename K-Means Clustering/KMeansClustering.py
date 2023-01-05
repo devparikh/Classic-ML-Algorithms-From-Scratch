@@ -4,14 +4,11 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import random 
+
 # Loading the Mall Customers Data CSV File
 df = pd.read_csv("Mall_Customers.csv")
 
-# Converting the Categorical Values of Gender to 1 for Male and 0 for Female
-df["Gender"] = df["Gender"].replace("Male", 1)
-df["Gender"] = df["Gender"].replace("Female", 0)
-
-# For simplicity we are just going to take 2 dimensions(for easier visualization & clustering) from the 4 dimensions, with one indepedent variable and the other dependent variable 
+# For simplicity we are just going to take 2 dimensions(for easier visualization & clustering) from the 4 dimensions
 # Indepedent Variable - Annual Income in (k$)
 # Dependent Variable - Spending Score (1-100)
 
@@ -23,9 +20,8 @@ y = df["Spending Score (1-100)"]
 '''Building K-Means Clustering Model'''
 
 # Model Parameters
-number_of_clusters = 5
+number_of_clusters = 7
 iterations = 100
-sse = []
 
 def Centroid_Initialization(k, input_data):
     # Centroid Initialization through KMeans++
@@ -62,9 +58,9 @@ def Centroid_Initialization(k, input_data):
         centroid = points[distance_from_nearest_point.index(max(distance_from_nearest_point))]
         centroids.append(centroid)
 
+
 def K_Means_Clustering(k, centroids, input_data):
     global clusters
-    global inertia  
 
     clusters = []
     i = 0
@@ -81,11 +77,10 @@ def K_Means_Clustering(k, centroids, input_data):
         nearest_cluster = clusters[distance_to_centroids.index(min(distance_to_centroids))]
         nearest_cluster.append(point)
 
-    intercluster_distances = []
     for cluster in range(0, len(clusters)):
         x_values = []
         y_values = []
-        distances_to_centroid = []
+
         for point in clusters[cluster]:
             x = point[0]
             x_values.append(x)
@@ -94,20 +89,11 @@ def K_Means_Clustering(k, centroids, input_data):
             y_values.append(y)
 
             centroid = centroids[cluster]
-
-            distance_to_centroid = (centroid[0] - point[0])**2 + (centroid[1] - point[1])**2
-            distances_to_centroid.append(distance_to_centroid)
             
         average_x = sum(x_values) / len(x_values)
         average_y = sum(y_values) / len(y_values)
             
         centroids[cluster] = [average_x, average_y]
-
-        intercluster_distance = sum(distances_to_centroid)
-        intercluster_distances.append(intercluster_distance)
-    
-    inertia = sum(intercluster_distances)
-    sse.append(inertia)
 
 '''Training K-Means + Results'''
 
@@ -136,9 +122,10 @@ def displaying_cluster(centroids, output_data):
             y_val.append(y)
 
         plt.scatter(x_val, y_val)
-
+        
+    plt.savefig("clustered_output.png")
     plt.show()
-
+    
 def training_KMeans(k, input_data, max_iters):
     # Centroids Initialization through K-Means++
     Centroid_Initialization(k, input_data)
@@ -148,8 +135,8 @@ def training_KMeans(k, input_data, max_iters):
     while iterations <= max_iters:
         K_Means_Clustering(number_of_clusters, centroids, points)
         iterations += 1
-    
-    # Displaying Clusted Data Points
-    displaying_cluster(centroids, clusters)
         
 training_KMeans(number_of_clusters, input_dataframe, iterations)
+
+# Displaying Clustred Data Points:
+displaying_cluster(centroids, clusters)
