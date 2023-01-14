@@ -22,7 +22,7 @@ y = df["Spending Score (1-100)"]
 # This is computed by finding the number of clusters that results in the largest inertia value
 number_of_clusters = 5
 
-def Centroid_Initialization(k, input_data):
+def centroid_initialization(k, input_data):
     # Centroid Initialization through KMeans++
     global points
     global centroids
@@ -59,7 +59,6 @@ def Centroid_Initialization(k, input_data):
 
         centroid = points[distance_from_nearest_point.index(max(distance_from_nearest_point))]
         centroids.append(centroid)
-
 
 def K_Means_Clustering(k, centroids, input_data):
     global clusters
@@ -133,11 +132,10 @@ def displaying_cluster(centroids, output_data):
     
     plt.savefig("clustered_output.png")
     plt.show()
-    
 
 def training_KMeans(k, input_data):
     # Centroids Initialization through K-Means++
-    Centroid_Initialization(k, input_data)
+    centroid_initialization(k, input_data)
 
     # Iteratively Running the K-Means Algorithm until the centroids of the clusters do not change for 2 consecutive iterations
     # 2 consecutive iterations lead to the best results in the least number of iterations, compared to a greater range like 3 or 5. 
@@ -159,7 +157,7 @@ def training_KMeans(k, input_data):
             else:
                 changing = True
 
-def Most_Optimal_Number_Of_Cluster(inertial_values):
+def most_optimal_number_of_cluster(inertial_values):
     most_optimal_number_of_clusters = []
     K = [5, 6, 7, 8, 9, 10]
 
@@ -197,7 +195,7 @@ def Most_Optimal_Number_Of_Cluster(inertial_values):
 
 # Finding the most optimal number of clusters
 all_inertial_values = []
-Most_Optimal_Number_Of_Cluster(all_inertial_values)
+most_optimal_number_of_cluster(all_inertial_values)
 
 # Training the K-Means Clustering model
 training_KMeans(number_of_clusters, input_dataframe)
