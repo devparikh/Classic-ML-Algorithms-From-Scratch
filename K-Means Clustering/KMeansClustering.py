@@ -18,7 +18,7 @@ y = df["Spending Score (1-100)"]
 
 '''Building K-Means Clustering Model'''
 
-# The most optimal number of clusters for this dataset is 6
+# The most optimal number of clusters for this dataset is 5
 # This is computed by finding the number of clusters that results in the largest inertia value
 number_of_clusters = 5
 
@@ -30,7 +30,7 @@ def centroid_initialization(k, input_data):
 
     for index in input_data.index:
         x_y_pair = []
-        # Extracting the x and y values from each row in the input data
+        # Extracting the x and y values from each row in the input data to store them as lists in the larger set of points
 
         x = input_data["Annual Income (k$)"][index]
         y = input_data["Spending Score (1-100)"][index]
