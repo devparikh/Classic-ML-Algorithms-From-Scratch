@@ -162,6 +162,7 @@ def most_optimal_number_of_cluster(inertial_values):
     K = [5, 6, 7, 8, 9, 10]
 
     iters = 0
+    # Attempting to find the most optimal number of clusters 1000 times, the number of clusters that is the most common throughout is selected for training K-Means
     while iters <= 1000:
         for k in K:
             # Performing clustering with k clusters
@@ -189,7 +190,8 @@ def most_optimal_number_of_cluster(inertial_values):
         inertial_values.clear()
         
         iters += 1 
-
+    
+    # Finding a k value that has the most duplicates from the test set finding the most optimal k value 1000 times
     num_of_clusters = max(set(most_optimal_number_of_clusters), key=most_optimal_number_of_clusters.count)
     print("The most optimal number of cluster is {}".format(num_of_clusters))
 
