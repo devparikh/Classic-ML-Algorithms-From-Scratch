@@ -163,7 +163,7 @@ def most_optimal_number_of_cluster(inertial_values):
 
     iters = 0
     # Attempting to find the most optimal number of clusters 1000 times, the number of clusters that is the most common throughout is selected for training K-Means
-    while iters <= 1000:
+    while iters <= 100:
         for k in K:
             # Performing clustering with k clusters
             training_KMeans(k, input_dataframe)
