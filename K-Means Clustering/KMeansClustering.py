@@ -18,8 +18,9 @@ y = df["Spending Score (1-100)"]
 
 '''Building K-Means Clustering Model'''
 
-# Model Parameters
-number_of_clusters = 7
+# The most optimal number of clusters for this dataset is 6
+# This is computed by finding the number of clusters that results in the largest inertia value
+number_of_clusters = 5
 
 def Centroid_Initialization(k, input_data):
     # Centroid Initialization through KMeans++
@@ -58,6 +59,7 @@ def Centroid_Initialization(k, input_data):
 
         centroid = points[distance_from_nearest_point.index(max(distance_from_nearest_point))]
         centroids.append(centroid)
+
 
 def K_Means_Clustering(k, centroids, input_data):
     global clusters
@@ -129,9 +131,10 @@ def displaying_cluster(centroids, output_data):
     x_val.clear()
     y_val.clear()
     
-        
+    plt.savefig("clustered_output.png")
     plt.show()
     
+
 def training_KMeans(k, input_data):
     # Centroids Initialization through K-Means++
     Centroid_Initialization(k, input_data)
@@ -142,7 +145,7 @@ def training_KMeans(k, input_data):
     change_in_centroid = []
     changing = True
     while changing != False:
-        K_Means_Clustering(number_of_clusters, centroids, points)
+        K_Means_Clustering(k, centroids, points)
 
         # Recording the k centroids for all iterations until current iteration
         change_in_centroid.append([centroids])
@@ -155,7 +158,48 @@ def training_KMeans(k, input_data):
                 changing = False
             else:
                 changing = True
+
+def Most_Optimal_Number_Of_Cluster(inertial_values):
+    most_optimal_number_of_clusters = []
+    K = [5, 6, 7, 8, 9, 10]
+
+    iters = 0
+    while iters <= 1000:
+        for k in K:
+            # Performing clustering with k clusters
+            training_KMeans(k, input_dataframe)
+
+            # Finding the Inertia for this cluster configuration
+            sum_of_distances_clusters = []
+            for cluster in range(0, len(clusters)-1):
+                within_cluster_distance = []
+                for point in clusters[cluster]:
+                    centroid = centroids[cluster]
+                    euclidean_distance = (centroid[0] - point[0])**2 + (centroid[1] - point[1])**2
+                    within_cluster_distance.append(euclidean_distance)
+                
+                within_cluster_sum_of_distance = sum(within_cluster_distance)
+                sum_of_distances_clusters.append(within_cluster_sum_of_distance)
         
+            inertia = sum(sum_of_distances_clusters)
+            inertial_values.append(inertia) 
+        
+        # Finding the index maximum inertial value from all variations of k, to get the index of the most optimal number of clusters
+        maximum_inertial_value_index = inertial_values.index(max(inertial_values))
+        most_optimal_number_of_clusters.append(K[maximum_inertial_value_index])
+
+        inertial_values.clear()
+        
+        iters += 1 
+
+    num_of_clusters = max(set(most_optimal_number_of_clusters), key=most_optimal_number_of_clusters.count)
+    print("The most optimal number of cluster is {}".format(num_of_clusters))
+
+# Finding the most optimal number of clusters
+all_inertial_values = []
+Most_Optimal_Number_Of_Cluster(all_inertial_values)
+
+# Training the K-Means Clustering model
 training_KMeans(number_of_clusters, input_dataframe)
 
 # Displaying Clustred Data Points:
