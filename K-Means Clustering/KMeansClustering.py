@@ -18,9 +18,9 @@ y = df["Spending Score (1-100)"]
 
 '''Building K-Means Clustering Model'''
 
-# The most optimal number of clusters for this dataset is 5
-# This is computed by finding the number of clusters that results in the largest inertia value
-number_of_clusters = 5
+# The most optimal number of clusters for this dataset is 10
+# This is computed by finding the number of clusters that results in the smallest inertia value
+number_of_clusters = 10
 
 def centroid_initialization(k, input_data):
     # Centroid Initialization through KMeans++
@@ -30,7 +30,7 @@ def centroid_initialization(k, input_data):
 
     for index in input_data.index:
         x_y_pair = []
-        # Extracting the x and y values from each row in the input data to store them as lists in the larger set of points
+        # Extracting the x and y values from each row in the input data
 
         x = input_data["Annual Income (k$)"][index]
         y = input_data["Spending Score (1-100)"][index]
@@ -59,6 +59,7 @@ def centroid_initialization(k, input_data):
 
         centroid = points[distance_from_nearest_point.index(max(distance_from_nearest_point))]
         centroids.append(centroid)
+
 
 def K_Means_Clustering(k, centroids, input_data):
     global clusters
@@ -132,6 +133,7 @@ def displaying_cluster(centroids, output_data):
     
     plt.savefig("clustered_output.png")
     plt.show()
+    
 
 def training_KMeans(k, input_data):
     # Centroids Initialization through K-Means++
@@ -162,7 +164,6 @@ def most_optimal_number_of_cluster(inertial_values):
     K = [5, 6, 7, 8, 9, 10]
 
     iters = 0
-    # Attempting to find the most optimal number of clusters 1000 times, the number of clusters that is the most common throughout is selected for training K-Means
     while iters <= 100:
         for k in K:
             # Performing clustering with k clusters
@@ -183,15 +184,14 @@ def most_optimal_number_of_cluster(inertial_values):
             inertia = sum(sum_of_distances_clusters)
             inertial_values.append(inertia) 
         
-        # Finding the index maximum inertial value from all variations of k, to get the index of the most optimal number of clusters
-        maximum_inertial_value_index = inertial_values.index(max(inertial_values))
+        # Finding the index minimum inertial value from all variations of k, to get the index of the most optimal number of clusters
+        maximum_inertial_value_index = inertial_values.index(min(inertial_values))
         most_optimal_number_of_clusters.append(K[maximum_inertial_value_index])
 
         inertial_values.clear()
         
         iters += 1 
-    
-    # Finding a k value that has the most duplicates from the test set finding the most optimal k value 1000 times
+
     num_of_clusters = max(set(most_optimal_number_of_clusters), key=most_optimal_number_of_clusters.count)
     print("The most optimal number of cluster is {}".format(num_of_clusters))
 
