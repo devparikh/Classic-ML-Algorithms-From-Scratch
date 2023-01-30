@@ -135,29 +135,3 @@ def bagging(input_dataset, x):
         y_bootstrapped_datasets.append(y_bootstrapped_array)
 
         n_value += 1
-
-def find_split_feature():
-    pass
-
-    
-    
-
-def random_forest():
-    pass
-
-
-
-
-
-
-
-# For this dataset, there are only 2 output classes, survived or not survived
-# Entropy Function = -(p+ * log2(p+)) - (p- * log2(p-))
-# p+ represents the frequency probability of passengers that survived in the data of node n
-# p- represents the frequency probability of passengers that survived in the data of node n
-
-
-# PClass, Sex, Age, Sibsp and Parch are the 5 most important features to predict for if a passenger survives or not
-# Random Forest works effectively by having a large number of decision trees that are as uncorrelated as possible
-# Decision Trees are fundamentally built from 2 main components; it's input features and input tabular data
-# Therefore one way to make them as uncorrelated to each other is to feed the decision trees in the random forest with the maximal number of features, the number of trees with the same set of features is minimized
