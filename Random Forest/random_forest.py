@@ -11,13 +11,13 @@ import numpy as np
 '''Loading Data + Data Preprocessing'''
 input_dataframe = pd.read_csv("train.csv")
 
-# Filling in missing values in the Age Column with the mode(age with the greatest frequency in the column) age, and the missing data in the Cabin column is fileld with NaN values
-# The mean and median values effect the outcome o
-input_dataframe.fillna({'Cabin': 'NaN'})
+# Filling in missing values in the Age Column with the mode(age with the greatest frequency in the column) age
 input_dataframe["Age"].fillna(input_dataframe["Age"].mode()[0], inplace=True)
+input_dataframe["Embarked"].fillna(input_dataframe["Embarked"].mode()[0], inplace=True)
 
-# Convert the column Sex into a numerical column for ease of use
+# Convert the Embarked and Sex column into a numerical column for ease of use
 input_dataframe["Sex"].replace(["male", "female"], [1, 0], inplace=True)
+input_dataframe["Embarked"].replace(["S", "Q", "C"], [1, 2, 3], inplace=True)
 
 features = ["Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked"]
 
@@ -52,54 +52,15 @@ def entropy(class_distribution_data):
     Entropy = -(survived_probability * math.log2(survived_probability)) - (not_survived_probability * math.log2(not_survived_probability))
     return Entropy
 
-def categorical_features_data_split(feature, parent_column_data, parent_output_data):
-    classes = parent_column_data.unique()
-
-    children_node_data = []
-    for category in classes:
-        category_classes = []
-        for row in range(0, len(parent_column_data)):
-            if parent_column_data[row] == category:
-                category_classes.append(parent_output_data[row])
-
-        children_node_data.append(category_classes)
-
-    return children_node_data
-
-def continuous_features_data_split(parent_column_data, parent_output_data):
-    # For features like Age, SipSp, Parch, Fare where there are not distinct categories rather numerical values 
-    # The approach is to split the parent node into children nodes by finding the average value of that feature
-
-    average_value = parent_column_data.mean()
-
-    n = 2
-    children_node_data = [[] for _ in range(n)]
-    for row in range(0, len(parent_column_data)):
-        if parent_column_data[row] <= average_value:
-                children_node_data[0].append(parent_output_data[row])
-
-        else:
-            children_node_data[1].append(parent_output_data[row])
-
-    return children_node_data   
-
 # This function calculated the information gain given a specific feature that would split the parent node into children node(s)
-def information_gain(feature, parent_column_data, parent_node_classes):
-    categorical_features = ["Pclass", "Sex", "Embarked"]
-
-    if feature in categorical_features:
-        children_node_data = categorical_features_data_split(feature, parent_column_data, parent_node_classes)
-          
-    else:
-        children_node_data = continuous_features_data_split(parent_column_data, parent_node_classes)
-    
+def information_gain(parent_node_classes, children_y):
     # Calculating Information Gain
     parent_entropy = entropy(parent_node_classes)
 
     children_node_weighted_entropys = []
-    for data in children_node_data:
+    for data in children_y:
         child_node_entropy = entropy(data)
-        child_node_weighted_entropy = len(data) / len(parent_node_classes) * child_node_entropy
+        child_node_weighted_entropy = float(len(data) / len(parent_node_classes) * child_node_entropy)
         children_node_weighted_entropys.append(child_node_weighted_entropy)
 
     weighted_average_entropy = sum(children_node_weighted_entropys)
@@ -116,6 +77,8 @@ def random_features_sampling(input_features, n_feature_sets, n_features):
         feature_sets.append(feature_set)
         num_feature_sets += 1
 
+    return feature_sets
+
 def bagging(input_dataset, x):
     n_value = 0
     X_bootstrapped_datasets = []
@@ -128,10 +91,65 @@ def bagging(input_dataset, x):
         X_bootstrapped_dataset = bootstrapped_dataset.drop("Survived", axis=1)
         y_bootstrapped_dataset = bootstrapped_dataset["Survived"]
 
-        X_bootstrapped_array = X_bootstrapped_dataset.to_numpy()
-        y_bootstrapped_array = y_bootstrapped_dataset.to_numpy()
-
-        X_bootstrapped_datasets.append(X_bootstrapped_array)
-        y_bootstrapped_datasets.append(y_bootstrapped_array)
+        X_bootstrapped_datasets.append(X_bootstrapped_dataset)
+        y_bootstrapped_datasets.append(y_bootstrapped_dataset)
 
         n_value += 1
+
+    return X_bootstrapped_datasets, y_bootstrapped_datasets
+
+'''Building the Random Forest'''
+
+# Hyperparams for Random Forest 
+max_depth = 6
+max_features = 4
+min_sample_split = 100
+min_samples_leaf = 99
+num_of_decision_trees = 100
+
+# A function for finding the best feature for splitting a parent node into children nodes
+def find_best_split_feature(feature_set, X_data, y_data):
+    categorical_features = ["Pclass", "Sex", "Embarked"]
+    features_information_gain = []
+    for feature in feature_set:
+        if feature in categorical_features:
+            X_column =  X_data[feature]
+            classes = sorted(list(X_column.unique()))
+
+            children_node_y = [[] for _ in range(len(classes))]
+            child_node_counter = 0
+
+            for category in classes:
+                for feature_row in range(0, len(X_column)):
+                    if X_column.iloc[feature_row] == category:
+                        child_y_data = y_data.iloc[feature_row]
+
+                        children_node_y[child_node_counter].append(child_y_data)
+
+                child_node_counter += 1
+
+            # Calculating Information Gain
+            information_gain_value = information_gain(y_data, children_node_y)
+
+            features_information_gain.append(information_gain_value)
+        
+        else:
+            X_column = X_data[feature]
+            average_value = X_column.mean()
+        
+            n = 2
+            children_node_y = [[] for _ in range(n)]
+            for feature_row in range(0, len(X_column)): 
+                if X_column[feature_row] <= average_value:
+                    children_node_y[0].append(y_data.iloc[feature_row])
+
+                else:
+                    children_node_y[1].append(y_data.iloc[feature_row])
+
+            # Calculating Information Gain
+            information_gain_value = information_gain(y_data, children_node_y)
+            
+            features_information_gain.append(information_gain_value)
+
+    optimal_feature = feature_set[features_information_gain.index(max(features_information_gain))]
+    return optimal_feature
