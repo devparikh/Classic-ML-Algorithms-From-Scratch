@@ -160,3 +160,33 @@ def perform_best_node_split(feature_set, X_data, y_data):
     y_data = optimal_feature_node_data[1]
 
     return X_data, y_data
+
+class Node(object):
+    def __init__(self, data):
+        self.data = data
+        self.children = []
+
+    def add_child(self, node):
+        self.children.append(node)
+
+def building_decision_tree(feature_set, X_data, y_data):
+    global nodes
+    nodes = []
+    depth = max_depth
+    features = max_features
+    while depth > 0 and len(y_dataset) >= min_sample_split and features > 0:
+        # Create the parent node and add it's children nodes
+        parent_node_data = [X_data, y_data]
+        parent_node = Node(parent_node_data)
+        children_X_data, children_y_data = perform_best_node_split(feature_set, X_data, y_data)
+
+        for (child_node_X, child_node_y) in zip(children_X_data, children_y_data):
+            child_node_data = [child_node_X, child_node_y]
+            child_node = Node(child_node_data)
+            parent_node.add_child(child_node)
+
+        feature_set.remove(feature_set[optimal_feature_index])
+        depth -= 1
+        features -= 1
+
+        nodes.append(parent_node)
