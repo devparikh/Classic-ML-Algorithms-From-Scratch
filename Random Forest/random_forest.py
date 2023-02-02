@@ -1,6 +1,3 @@
-# Implementing Random Forest from Scratch 
-
-# Importing libraries for this implementation
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -20,6 +17,7 @@ input_dataframe["Sex"].replace(["male", "female"], [1, 0], inplace=True)
 input_dataframe["Embarked"].replace(["S", "Q", "C"], [1, 2, 3], inplace=True)
 
 features = ["Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked"]
+categorical_features = ["Pclass", "Sex", "Embarked"]
 
 input_dataframe = input_dataframe.drop(["PassengerId", "Name", "Ticket", "Cabin"], axis=1)
 
@@ -98,39 +96,36 @@ def bagging(input_dataset, x):
 
     return X_bootstrapped_datasets, y_bootstrapped_datasets
 
-'''Building the Random Forest'''
-
-# Hyperparams for Random Forest 
-max_depth = 6
-max_features = 4
-min_sample_split = 100
-min_samples_leaf = 99
-num_of_decision_trees = 100
-
 # A function for finding the best feature for splitting a parent node into children nodes
-def find_best_split_feature(feature_set, X_data, y_data):
-    categorical_features = ["Pclass", "Sex", "Embarked"]
+def perform_best_node_split(feature_set, X_data, y_data):
+    global X_column, classes
     features_information_gain = []
+    children_node_data = []
     for feature in feature_set:
         if feature in categorical_features:
             X_column =  X_data[feature]
             classes = sorted(list(X_column.unique()))
 
             children_node_y = [[] for _ in range(len(classes))]
+            children_node_X = [[] for _ in range(len(classes))]
+            
             child_node_counter = 0
-
             for category in classes:
                 for feature_row in range(0, len(X_column)):
                     if X_column.iloc[feature_row] == category:
                         child_y_data = y_data.iloc[feature_row]
+                        child_X_data = X_data.iloc[feature_row]
 
                         children_node_y[child_node_counter].append(child_y_data)
+                        children_node_X[child_node_counter].append(child_X_data)   
+    
+                child_node_counter += 1 
 
-                child_node_counter += 1
-
+            child_node_data = [children_node_X, children_node_y]
+            children_node_data.append(child_node_data)
+        
             # Calculating Information Gain
             information_gain_value = information_gain(y_data, children_node_y)
-
             features_information_gain.append(information_gain_value)
         
         else:
@@ -138,18 +133,30 @@ def find_best_split_feature(feature_set, X_data, y_data):
             average_value = X_column.mean()
         
             n = 2
-            children_node_y = [[] for _ in range(n)]
+            children_node_y = [[], []]
+            children_node_X = [[], []]
             for feature_row in range(0, len(X_column)): 
                 if X_column[feature_row] <= average_value:
                     children_node_y[0].append(y_data.iloc[feature_row])
+                    children_node_X[0].append(X_data.iloc[feature_row])
 
                 else:
                     children_node_y[1].append(y_data.iloc[feature_row])
+                    children_node_X[1].append(X_data.iloc[feature_row])
+
+            child_node_data = [children_node_X, children_node_y]
+            children_node_data.append(child_node_data)
 
             # Calculating Information Gain
             information_gain_value = information_gain(y_data, children_node_y)
-            
             features_information_gain.append(information_gain_value)
+    
+    optimal_feature_index = features_information_gain.index(max(features_information_gain))
+    optimal_feature = feature_set[optimal_feature_index]
+    print(optimal_feature)
 
-    optimal_feature = feature_set[features_information_gain.index(max(features_information_gain))]
-    return optimal_feature
+    optimal_feature_node_data = children_node_data[optimal_feature_index] 
+    X_data = optimal_feature_node_data[0]
+    y_data = optimal_feature_node_data[1]
+
+    return X_data, y_data
