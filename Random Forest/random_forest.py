@@ -30,10 +30,6 @@ testing_data = input_dataframe.iloc[train_test_percentage_split:, :]
 
 '''Implementing Random Forests'''
 
-# Creating functions for calculating entropy and information gain, key metrics for building effective decision trees
-# Entropy measures the uniformity of data in a given node or the measure of impurity of the data
-# Information Gain measures the decrease in impurity/uniformity of data from a parent node to it's children nodes
-
 def entropy(class_distribution_data):
     global Entropy
     survived = []
