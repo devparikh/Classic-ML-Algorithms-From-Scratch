@@ -170,7 +170,6 @@ class Node(object):
         self.children.append(node)
 
 def building_decision_tree(feature_set, X_data, y_data):
-    global nodes
     nodes = []
     depth = max_depth
     features = max_features
@@ -190,3 +189,7 @@ def building_decision_tree(feature_set, X_data, y_data):
         features -= 1
 
         nodes.append(parent_node)
+
+    return nodes
+
+nodes = building_decision_tree(features_set, X_data, y_data)
