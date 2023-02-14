@@ -5,6 +5,10 @@ import math
 import random
 import numpy as np
 
+import warnings
+
+warnings.filterwarnings("ignore")
+
 '''Loading Data + Data Preprocessing'''
 input_dataframe = pd.read_csv("train.csv")
 
@@ -97,25 +101,29 @@ def perform_best_node_split(feature_set, X_data, y_data):
     global X_column, classes
     features_information_gain = []
     children_node_data = []
+
     for feature in feature_set:
         if feature in categorical_features:
             X_column =  X_data[feature]
             classes = sorted(list(X_column.unique()))
 
-            children_node_y = [[] for _ in range(len(classes))]
-            children_node_X = [[] for _ in range(len(classes))]
+            children_node_y = []
+            children_node_X = []
             
-            child_node_counter = 0
             for category in classes:
+                X_dataframe = pd.DataFrame(columns=features)
+                y_list = []
                 for feature_row in range(0, len(X_column)):
                     if X_column.iloc[feature_row] == category:
-                        child_y_data = y_data.iloc[feature_row]
-                        child_X_data = X_data.iloc[feature_row]
+                        child_y_data = y_data[feature_row]
+                        y_list.append(child_y_data)
 
-                        children_node_y[child_node_counter].append(child_y_data)
-                        children_node_X[child_node_counter].append(child_X_data)   
-    
-                child_node_counter += 1 
+                        child_X_data = X_data.iloc[feature_row]
+                        child_X_data = {'Pclass' : child_X_data["Pclass"], 'Sex' : child_X_data["Sex"], 'Age' : child_X_data["Age"], 'SibSp' : child_X_data["SibSp"], 'Parch': child_X_data["Parch"], 'Fare' : child_X_data["Fare"], 'Embarked' : child_X_data["Embarked"]}
+                        X_dataframe = X_dataframe.append(child_X_data, ignore_index=True)
+
+                children_node_X.append(X_dataframe)
+                children_node_y.append(y_list)
 
             child_node_data = [children_node_X, children_node_y]
             children_node_data.append(child_node_data)
@@ -128,64 +136,50 @@ def perform_best_node_split(feature_set, X_data, y_data):
             X_column = X_data[feature]
             average_value = X_column.mean()
         
-            n = 2
-            children_node_y = [[], []]
-            children_node_X = [[], []]
+            children_node_y = []
+            children_node_X = []
+
+            left_child_X_dataframe = pd.DataFrame(columns=features)
+            right_child_X_dataframe = pd.DataFrame(columns=features)
+
+            left_y_list = []
+            right_y_list = []
             for feature_row in range(0, len(X_column)): 
-                if X_column[feature_row] <= average_value:
-                    children_node_y[0].append(y_data.iloc[feature_row])
-                    children_node_X[0].append(X_data.iloc[feature_row])
+                if X_column.iloc[feature_row] <= average_value:
+                    child_y_data = y_data[feature_row]
+                    left_y_list.append(child_y_data)
 
+                    child_X_data = X_data.iloc[feature_row]
+                    child_X_data = {'Pclass' : child_X_data["Pclass"], 'Sex' : child_X_data["Sex"], 'Age' : child_X_data["Age"], 'SibSp' : child_X_data["SibSp"], 'Parch': child_X_data["Parch"], 'Fare' : child_X_data["Fare"], 'Embarked' : child_X_data["Embarked"]}
+                    left_child_X_dataframe = left_child_X_dataframe.append(child_X_data, ignore_index=True)
+                    
                 else:
-                    children_node_y[1].append(y_data.iloc[feature_row])
-                    children_node_X[1].append(X_data.iloc[feature_row])
+                    child_y_data = y_data[feature_row]
+                    right_y_list.append(child_y_data)
 
+                    child_X_data = X_data.iloc[feature_row]
+                    child_X_data = {'Pclass' : child_X_data["Pclass"], 'Sex' : child_X_data["Sex"], 'Age' : child_X_data["Age"], 'SibSp' : child_X_data["SibSp"], 'Parch': child_X_data["Parch"], 'Fare' : child_X_data["Fare"], 'Embarked' : child_X_data["Embarked"]}
+                    right_child_X_dataframe = right_child_X_dataframe.append(child_X_data, ignore_index=True)
+            
+
+            children_node_X.append(left_child_X_dataframe)
+            children_node_X.append(right_child_X_dataframe)
+
+            children_node_y.append(left_y_list)
+            children_node_y.append(right_y_list)
+            
             child_node_data = [children_node_X, children_node_y]
             children_node_data.append(child_node_data)
 
             # Calculating Information Gain
             information_gain_value = information_gain(y_data, children_node_y)
             features_information_gain.append(information_gain_value)
-    
+
     optimal_feature_index = features_information_gain.index(max(features_information_gain))
     optimal_feature = feature_set[optimal_feature_index]
-    print(optimal_feature)
 
     optimal_feature_node_data = children_node_data[optimal_feature_index] 
     X_data = optimal_feature_node_data[0]
     y_data = optimal_feature_node_data[1]
 
-    return X_data, y_data
-
-class Node(object):
-    def __init__(self, data):
-        self.data = data
-        self.children = []
-
-    def add_child(self, node):
-        self.children.append(node)
-
-def building_decision_tree(feature_set, X_data, y_data):
-    nodes = []
-    depth = max_depth
-    features = max_features
-    while depth > 0 and len(y_dataset) >= min_sample_split and features > 0:
-        # Create the parent node and add it's children nodes
-        parent_node_data = [X_data, y_data]
-        parent_node = Node(parent_node_data)
-        children_X_data, children_y_data = perform_best_node_split(feature_set, X_data, y_data)
-
-        for (child_node_X, child_node_y) in zip(children_X_data, children_y_data):
-            child_node_data = [child_node_X, child_node_y]
-            child_node = Node(child_node_data)
-            parent_node.add_child(child_node)
-
-        feature_set.remove(feature_set[optimal_feature_index])
-        depth -= 1
-        features -= 1
-
-        nodes.append(parent_node)
-
-    return nodes
-
-nodes = building_decision_tree(features_set, X_data, y_data)
+    return X_data, y_data, optimal_feature
