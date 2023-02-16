@@ -183,3 +183,58 @@ def perform_best_node_split(feature_set, X_data, y_data):
     y_data = optimal_feature_node_data[1]
 
     return X_data, y_data, optimal_feature
+
+terminal_node = False
+
+input_dataset = [X_data, y_data]
+tree = Node(input_dataset)
+layer = 1
+
+iteration = 0
+while terminal_node == False:
+    if iteration == 0:
+        children_X_data, children_y_data, child_optimal_feature = perform_best_node_split(features_set, X_data, y_data)
+
+        for (child_node_X, child_node_y) in zip(children_X_data, children_y_data):
+            child_node_data = [child_node_X, child_node_y]
+            child_node = Node(child_node_data)
+            tree.add_child(child_node, input_dataset)
+
+        max_features -= 1
+
+        iteration += 1
+
+        layer += 1
+
+    elif iteration > 0 and iteration < max_depth:
+        if layer == 2:
+            parent_nodes = tree.children
+            layer += 1     
+        
+        else:   
+            depth_previous_nodes = len(parent_nodes) + 1
+            parent_nodes = []
+            for children_node in range(depth_previous_nodes, len(tree.children)):  
+                children_node = tree.children[children_node]
+                parent_nodes.append(children_node)
+
+            layer += 1
+        
+        for parent_node in parent_nodes:
+            parent_X_data = parent_node.data[0]
+            parent_y_data = parent_node.data[1]
+
+            parent_data = [parent_X_data, parent_y_data]
+            children_X_data, children_y_data, child_optimal_feature = perform_best_node_split(features_set, parent_X_data, parent_y_data)
+
+            for (child_node_X, child_node_y) in zip(children_X_data, children_y_data):
+                child_node_data = [child_node_X, child_node_y]
+                child_node = Node(child_node_data)
+                tree.add_child(child_node, parent_data)
+
+        max_features -= 1
+
+        iteration += 1
+
+    else:
+        terminal_node = True
