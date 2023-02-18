@@ -47,7 +47,11 @@ def entropy(class_distribution_data):
     survived_probability = len(survived) / len(class_distribution_data)
     not_survived_probability = len(not_survived) / len(class_distribution_data)
 
-    Entropy = -(survived_probability * math.log2(survived_probability)) - (not_survived_probability * math.log2(not_survived_probability))
+    if survived_probability == 1.0 or not_survived_probability == 1.0:
+        Entropy = 0
+    else:
+        Entropy = -(survived_probability * math.log2(survived_probability)) - (not_survived_probability * math.log2(not_survived_probability))
+    
     return Entropy
 
 # This function calculated the information gain given a specific feature that would split the parent node into children node(s)
@@ -55,16 +59,17 @@ def information_gain(parent_node_classes, children_y):
     # Calculating Information Gain
     parent_entropy = entropy(parent_node_classes)
 
-    children_node_weighted_entropys = []
     for data in children_y:
         child_node_entropy = entropy(data)
+
+        children_node_weighted_entropys = []
         child_node_weighted_entropy = float(len(data) / len(parent_node_classes) * child_node_entropy)
         children_node_weighted_entropys.append(child_node_weighted_entropy)
 
-    weighted_average_entropy = sum(children_node_weighted_entropys)
+        weighted_average_entropy = sum(children_node_weighted_entropys)
 
-    information_gain = parent_entropy - weighted_average_entropy
-    return information_gain
+        information_gain = parent_entropy - weighted_average_entropy
+        return information_gain
 
 def random_features_sampling(input_features, n_feature_sets, n_features):
     # This function samples n elements from a feature set for x new feature sets
