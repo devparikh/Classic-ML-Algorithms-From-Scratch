@@ -35,7 +35,6 @@ testing_data = input_dataframe.iloc[train_test_percentage_split:, :]
 '''Implementing Random Forests'''
 
 def entropy(class_distribution_data):
-    global Entropy
     survived = []
     not_survived = []
     for output_label in class_distribution_data:
@@ -93,6 +92,7 @@ def bagging(input_dataset, x):
 
         X_bootstrapped_dataset = bootstrapped_dataset.drop("Survived", axis=1)
         y_bootstrapped_dataset = bootstrapped_dataset["Survived"]
+
 
         X_bootstrapped_datasets.append(X_bootstrapped_dataset)
         y_bootstrapped_datasets.append(y_bootstrapped_dataset)
@@ -179,7 +179,8 @@ def perform_best_node_split(feature_set, X_data, y_data):
             # Calculating Information Gain
             information_gain_value = information_gain(y_data, children_node_y)
             features_information_gain.append(information_gain_value)
-
+    
+    print(features_information_gain)
     optimal_feature_index = features_information_gain.index(max(features_information_gain))
     optimal_feature = feature_set[optimal_feature_index]
 
@@ -188,6 +189,15 @@ def perform_best_node_split(feature_set, X_data, y_data):
     y_data = optimal_feature_node_data[1]
 
     return X_data, y_data, optimal_feature
+
+'''Building out the Random Forest'''
+
+# Hyperparams for Random Forest
+max_depth = 3
+max_features = 4
+min_sample_split = 50
+min_samples_leaf = 49
+num_of_decision_trees = 100
 
 # Testing the Tree Class
 X_dataset, y_dataset = bagging(training_data, x=100)
@@ -257,3 +267,4 @@ while terminal_node == False and len(features_set) > 0:
  
     else:
         terminal_node = True
+
