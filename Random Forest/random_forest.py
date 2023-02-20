@@ -212,59 +212,47 @@ class Node(object):
     def __init__(self, data):
         self.data = data
         self.children = []
-        #self.parent = parent
     
     def add_child(self, node):
         self.children.append(node)
-        #for child in self.children:
-            #child.add_child(node, parent)
 
 terminal_node = False
 
 input_dataset = [X_data, y_data]
 tree = Node(input_dataset)
-layer = 1
 
 iteration = 0
-
-parent_node_data = []
+children_node_data = []
 while terminal_node == False and len(features_set) > 0:
     if iteration == 0:
         children_X_data, children_y_data, child_optimal_feature = perform_best_node_split(features_set, X_data, y_data)
 
         for (child_node_X, child_node_y) in zip(children_X_data, children_y_data):
             child_node_data = [child_node_X, child_node_y]
-            parent_node_data.append(child_node_data)
+            children_node_data.append(child_node_data)
             child_node = Node(child_node_data)
             tree.add_child(child_node)
 
         features_set.remove(child_optimal_feature)
 
-        max_features -= 1
         iteration += 1
-        layer += 1
 
-    elif iteration > 0:
+    elif iteration > 0 and iteration < max_depth:
+        parent_nodes_data = children_node_data
         children_node_data = []
-        for parent_node_data in parent_node_data:
+        for parent_node_data in parent_nodes_data:
             parent_X_data = parent_node_data[0]
             parent_y_data = parent_node_data[1]
 
-            parent_data = [parent_X_data, parent_y_data]
             children_X_data, children_y_data, child_optimal_feature = perform_best_node_split(features_set, parent_X_data, parent_y_data)
             features_set.remove(child_optimal_feature)
                 
             for (child_node_X, child_node_y) in zip(children_X_data, children_y_data):
                 child_node_data = [child_node_X, child_node_y]
-                parent_node_data
-
                 child_node = Node(child_node_data)
                 tree.add_child(child_node)
-
-        max_features -= 1
 
         iteration += 1
  
     else:
         terminal_node = True
-
