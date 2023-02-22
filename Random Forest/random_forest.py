@@ -191,22 +191,12 @@ def perform_best_node_split(feature_set, X_data, y_data):
     return X_data, y_data, optimal_feature
 
 '''Building out the Random Forest'''
+'''Building out the Random Forest'''
 
-# Hyperparams for Random Forest
-max_depth = 3
-max_features = 4
+# Parameters for Random Forest
+max_depth = 6
 min_sample_split = 50
-min_samples_leaf = 49
 num_of_decision_trees = 100
-
-# Testing the Tree Class
-X_dataset, y_dataset = bagging(training_data, x=100)
-features_sets = random_features_sampling(features, n_feature_sets=100, n_features=7)
-
-X_data = X_dataset[1]
-y_data = y_dataset[1]
-
-features_set = features_sets[1]
 
 class Node(object):
     def __init__(self, data):
@@ -216,43 +206,87 @@ class Node(object):
     def add_child(self, node):
         self.children.append(node)
 
-terminal_node = False
+def building_decision_tree(feature_set, X_data, y_data, depth, terminal_node=False):
+    # Concatenating the X & y data to create the input data to be passed to the root node
+    input_dataset = [X_data, y_data]
+    # Creating the root node using the Node object initialize above this function
+    root_node = Node(input_dataset)
+    depth -= 1  
 
-input_dataset = [X_data, y_data]
-tree = Node(input_dataset)
+    # Initializing 2 lists used in the loop below
+    children_node_data = []
+    children_nodes = []
 
-iteration = 0
-children_node_data = []
-while terminal_node == False and len(features_set) > 0:
-    if iteration == 0:
-        children_X_data, children_y_data, child_optimal_feature = perform_best_node_split(features_set, X_data, y_data)
+    while terminal_node == False and len(feature_set) > 0:
+        if depth == 5:
+            # For the first split in the tree, we will split from the singular root node using only 1 feature
+            children_X_data, children_y_data, child_optimal_feature = perform_best_node_split(feature_set, X_data, y_data)
 
-        for (child_node_X, child_node_y) in zip(children_X_data, children_y_data):
-            child_node_data = [child_node_X, child_node_y]
-            children_node_data.append(child_node_data)
-            child_node = Node(child_node_data)
-            tree.add_child(child_node)
-
-        features_set.remove(child_optimal_feature)
-
-        iteration += 1
-
-    elif iteration > 0 and iteration < max_depth:
-        parent_nodes_data = children_node_data
-        children_node_data = []
-        for parent_node_data in parent_nodes_data:
-            parent_X_data = parent_node_data[0]
-            parent_y_data = parent_node_data[1]
-
-            children_X_data, children_y_data, child_optimal_feature = perform_best_node_split(features_set, parent_X_data, parent_y_data)
-            features_set.remove(child_optimal_feature)
-                
             for (child_node_X, child_node_y) in zip(children_X_data, children_y_data):
                 child_node_data = [child_node_X, child_node_y]
                 child_node = Node(child_node_data)
-                tree.add_child(child_node)
 
-        iteration += 1
- 
-    else:
-        terminal_node = True
+                # Appending the data of the node beinbg passed to the child node
+                children_node_data.append(child_node_data)
+                # Adding the child node to be referenced later for further splitting
+                children_nodes.append(child_node)
+
+                # Appending each child node to the (parent node).children method referenced later when traversing through the tree
+                root_node.add_child(child_node)
+
+            feature_set.remove(child_optimal_feature)
+
+        elif depth >= 1:
+            parent_nodes_data = children_node_data
+            parent_nodes = children_nodes
+
+            children_node_data = []
+            children_nodes = []
+            
+            # Iterating over each parent node(leaf nodes of the current tree), attempting to split them further into n children nodes
+            for index in range(0, len(parent_nodes_data)):
+                # Getting the data for parent nodes
+                parent_node_data = parent_nodes_data[index]
+                parent_X_data = parent_node_data[0]
+                parent_y_data = parent_node_data[1]
+
+                # Checking if further splitting is possible if enough features & num of samples meets the minimum requirement of 50 rows(data points)
+                if len(parent_nodes_data) <= len(feature_set) and len(parent_y_data) >= min_sample_split:
+                    parent_node = parent_nodes[index]
+
+                    children_X_data, children_y_data, child_optimal_feature = perform_best_node_split(feature_set, parent_X_data, parent_y_data)
+                    feature_set.remove(child_optimal_feature)
+
+                    for (child_node_X, child_node_y) in zip(children_X_data, children_y_data):
+                        child_node_data = [child_node_X, child_node_y]
+                        child_node = Node(child_node_data)
+                        children_node_data.append(child_node_data)
+                        children_nodes.append(child_node)
+                        parent_node.add_child(child_node)
+
+                # if the conditions are not meet, the parent nodes become leaf nodes and the tree is built
+                else:
+                    terminal_node = True
+
+        else:
+            terminal_node = True
+
+    return root_node
+
+# Creating the 100 randomly sampled input datasets & feature sets
+X_dataset, y_dataset = bagging(input_dataframe, x=100)
+features_sets = random_features_sampling(features, n_feature_sets=100, n_features=7)
+
+def random_forest(features_sets, X_dataset, y_dataset, depth):
+    trees = []
+    for index in range(0, len(features_sets)):
+        X_data = X_dataset[index]
+        y_data = y_dataset[index]
+        features_set = features_sets[index]
+
+        root_node = building_decision_tree(features_set, X_data, y_data, depth)
+        print(root_node)
+        #trees.append(root_node)
+
+    #return trees
+trees = random_forest(features_sets, X_dataset, y_dataset, max_depth)
