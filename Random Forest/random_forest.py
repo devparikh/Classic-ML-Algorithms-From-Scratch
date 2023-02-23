@@ -217,6 +217,8 @@ def building_decision_tree(feature_set, X_data, y_data, depth, terminal_node=Fal
     children_node_data = []
     children_nodes = []
 
+    features_used = []
+
     while terminal_node == False and len(feature_set) > 0:
         if depth == 5:
             # For the first split in the tree, we will split from the singular root node using only 1 feature
@@ -226,7 +228,7 @@ def building_decision_tree(feature_set, X_data, y_data, depth, terminal_node=Fal
                 child_node_data = [child_node_X, child_node_y]
                 child_node = Node(child_node_data)
 
-                # Appending the data of the node beinbg passed to the child node
+                # Appending the data of the node being passed to the child node
                 children_node_data.append(child_node_data)
                 # Adding the child node to be referenced later for further splitting
                 children_nodes.append(child_node)
@@ -235,6 +237,7 @@ def building_decision_tree(feature_set, X_data, y_data, depth, terminal_node=Fal
                 root_node.add_child(child_node)
 
             feature_set.remove(child_optimal_feature)
+            features_used.append(child_optimal_feature)
 
         elif depth >= 1:
             parent_nodes_data = children_node_data
@@ -256,6 +259,7 @@ def building_decision_tree(feature_set, X_data, y_data, depth, terminal_node=Fal
 
                     children_X_data, children_y_data, child_optimal_feature = perform_best_node_split(feature_set, parent_X_data, parent_y_data)
                     feature_set.remove(child_optimal_feature)
+                    features_used.append(child_optimal_feature)
 
                     for (child_node_X, child_node_y) in zip(children_X_data, children_y_data):
                         child_node_data = [child_node_X, child_node_y]
@@ -271,22 +275,53 @@ def building_decision_tree(feature_set, X_data, y_data, depth, terminal_node=Fal
         else:
             terminal_node = True
 
-    return root_node
+    return root_node, features_used
 
-# Creating the 100 randomly sampled input datasets & feature sets
+# Building Random Forest
 X_dataset, y_dataset = bagging(input_dataframe, x=100)
-features_sets = random_features_sampling(features, n_feature_sets=100, n_features=7)
+features_sets = random_features_sampling(features, n_feature_sets=100, n_features=5)
 
 def random_forest(features_sets, X_dataset, y_dataset, depth):
     trees = []
+    features = []
     for index in range(0, len(features_sets)):
         X_data = X_dataset[index]
         y_data = y_dataset[index]
         features_set = features_sets[index]
 
-        root_node = building_decision_tree(features_set, X_data, y_data, depth)
-        print(root_node)
-        #trees.append(root_node)
+        root_node, features_used = building_decision_tree(features_set, X_data, y_data, depth)
+        trees.append(root_node)
+        features.append(features_used)
 
-    #return trees
-trees = random_forest(features_sets, X_dataset, y_dataset, max_depth)
+    return trees, features
+
+trees, features_set = random_forest(features_sets, X_dataset, y_dataset, max_depth)
+
+# Traversing through the trees
+for index in range(0, len(trees)):
+    tree = trees[index]
+    features = features_set[index]
+
+    print("-------Tree #{}---------".format(index + 1))
+    print("The root node is {}".format(tree))
+    print("The features used are {}".format(features))
+
+    children_nodes = tree.children
+    print("Root Children {}".format(children_nodes))
+
+    while children_nodes != []:
+        parent_nodes = children_nodes
+        children_nodes = []
+    
+        node_counter = 0
+        for parent_node in parent_nodes:
+            node_counter += 1
+            print("Child Node {}: {}".format(node_counter, parent_node))
+
+            child_nodes = parent_node.children
+
+            if child_nodes != []:
+                for child_node in child_nodes:
+                    children_nodes.append(child_node)
+            else:
+                continue  
