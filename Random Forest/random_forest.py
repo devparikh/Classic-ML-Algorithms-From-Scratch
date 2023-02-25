@@ -124,13 +124,13 @@ def perform_best_node_split(feature_set, X_data, y_data):
             for category in classes:
                 X_dataframe = pd.DataFrame(columns=features)
                 y_list = []
-                for feature_row in range(0, len(X_column)):
-                    if X_column.iloc[feature_row] == category:
+                for feature in range(0, len(X_column)):
+                    if X_column.iloc[feature] == category:
                         # Storing the predictions(0s and 1s) in a list format
-                        child_y_data = y_data[feature_row]
+                        child_y_data = y_data[feature]
                         y_list.append(child_y_data)
 
-                        child_X_data = X_data.iloc[feature_row]
+                        child_X_data = X_data.iloc[feature]
                         child_X_data = {'Pclass' : child_X_data["Pclass"], 'Sex' : child_X_data["Sex"], 'Age' : child_X_data["Age"], 'SibSp' : child_X_data["SibSp"], 'Parch': child_X_data["Parch"], 'Fare' : child_X_data["Fare"], 'Embarked' : child_X_data["Embarked"]}
                         X_dataframe = X_dataframe.append(child_X_data, ignore_index=True)
 
@@ -159,31 +159,31 @@ def perform_best_node_split(feature_set, X_data, y_data):
             # When a non-categorical feature is choosen for splitting a node, it gets split into 2 nodes, the left node is for all data points that are equal to or lower than the average value calculated in the feature's column
             # The rest of the data points go to the right node
 
-            left_child_X_dataframe = pd.DataFrame(columns=features)
-            right_child_X_dataframe = pd.DataFrame(columns=features)
+            left_X_dataframe = pd.DataFrame(columns=features)
+            right_X_dataframe = pd.DataFrame(columns=features)
 
             left_y_list = []
             right_y_list = []
-            for feature_row in range(0, len(X_column)): 
-                if X_column.iloc[feature_row] <= average_value:
-                    child_y_data = y_data[feature_row]
+            for feature in range(0, len(X_column)): 
+                if X_column.iloc[feature] <= average_value:
+                    child_y_data = y_data[feature]
                     left_y_list.append(child_y_data)
 
-                    child_X_data = X_data.iloc[feature_row]
+                    child_X_data = X_data.iloc[feature]
                     child_X_data = {'Pclass' : child_X_data["Pclass"], 'Sex' : child_X_data["Sex"], 'Age' : child_X_data["Age"], 'SibSp' : child_X_data["SibSp"], 'Parch': child_X_data["Parch"], 'Fare' : child_X_data["Fare"], 'Embarked' : child_X_data["Embarked"]}
-                    left_child_X_dataframe = left_child_X_dataframe.append(child_X_data, ignore_index=True)
+                    left_X_dataframe = left_X_dataframe.append(child_X_data, ignore_index=True)
                     
                 else:
-                    child_y_data = y_data[feature_row]
+                    child_y_data = y_data[feature]
                     right_y_list.append(child_y_data)
 
-                    child_X_data = X_data.iloc[feature_row]
+                    child_X_data = X_data.iloc[feature]
                     child_X_data = {'Pclass' : child_X_data["Pclass"], 'Sex' : child_X_data["Sex"], 'Age' : child_X_data["Age"], 'SibSp' : child_X_data["SibSp"], 'Parch': child_X_data["Parch"], 'Fare' : child_X_data["Fare"], 'Embarked' : child_X_data["Embarked"]}
-                    right_child_X_dataframe = right_child_X_dataframe.append(child_X_data, ignore_index=True)
+                    right_X_dataframe = right_X_dataframe.append(child_X_data, ignore_index=True)
             
 
-            children_node_X.append(left_child_X_dataframe)
-            children_node_X.append(right_child_X_dataframe)
+            children_node_X.append(left_X_dataframe)
+            children_node_X.append(right_X_dataframe)
 
             children_node_y.append(left_y_list)
             children_node_y.append(right_y_list)
@@ -271,7 +271,7 @@ def building_decision_tree(feature_set, X_data, y_data, depth, terminal_node=Fal
                 parent_entropy = entropy(parent_y_data)
 
                 # Performing the splitting until there are no features left in the feature set & num of samples meets the minimum requirement of 50 rows(data points)
-                if len(feature_set) > 0 and len(parent_y_data) >= min_sample_split and parent_node != 0:
+                if len(feature_set) > 0 and len(parent_y_data) >= min_sample_split and parent_entropy != 0:
                     parent_node = parent_nodes[index]
 
                     children_X_data, children_y_data, child_optimal_feature = perform_best_node_split(feature_set, parent_X_data, parent_y_data)
@@ -288,11 +288,11 @@ def building_decision_tree(feature_set, X_data, y_data, depth, terminal_node=Fal
                 # if the conditions are not meet, the parent nodes become leaf nodes and the tree is built
                 else:
                     terminal_node = True
-
         else:
             terminal_node = True
 
     return root_node, features_used
+
 
 def random_forest(features_sets, X_dataset, y_dataset, depth):
     trees = []
@@ -322,39 +322,44 @@ trees, features_set = random_forest(features_sets, X_dataset, y_dataset, max_dep
 # Traversing through the trees
 tree_num = 1
 for index in range(0, len(trees)):
+    # Retrieving the root node of tree and the features used in the tree
     root_node = trees[index]
     features = features_set[index]
 
     print("-----Tree #{}------".format(tree_num))
 
+    # Initializing the first set of children nodes breaking down from the root node
     children_nodes = root_node.children
-    print("Layer #1")
-    print("-------------------")
-    print("Split #1: {}".format(features[0]))
-    print("-------------------")
-    print("Root Node")
 
+    print("Layer #1")
+    print(root_node, features[0])
+
+    features.remove(features[0])
     layer = 1
 
     while len(children_nodes) > 0:
+        # setting the children nodes to parent nodes as they are going to be split further
         parent_nodes = children_nodes
+        # reinitialize children_nodes to store the new child nodes
         children_nodes = []
 
+        layer += 1
         print("Layer #{}".format(layer))
-        print("-------------------")
-        print("Split #{} Feature: {}".format(layer, features[layer]))
-        print("-------------------")
 
-        node_counter = 0
         for parent_node in parent_nodes:
-            node_counter += 1
-            print("Child Node #{}".format(node_counter))
+            # If there are still features left in the used features set, then we print the current node and it's split feature
+            if len(features) > 0:
+                print(parent_node, features[0])
+                features.remove(features[0])
 
+            # else simply print the current node
+            else:
+                print(parent_node)
+
+            # get the children of the current node and append them to children_nodes as long as (current_node).children is not empty
             child_nodes = parent_node.children
             if len(child_nodes) > 0:
                 for child_node in child_nodes:
                     children_nodes.append(child_node)
-
-        layer += 1
 
     tree_num += 1
