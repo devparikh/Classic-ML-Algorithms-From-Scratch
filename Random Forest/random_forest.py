@@ -313,7 +313,7 @@ max_depth = 4
 min_sample_split = 50
 
 # Sampling feature sets and X and y data for building the trees
-X_dataset, y_dataset = bagging(input_dataframe, x=100)
+X_dataset, y_dataset = bagging(training_data, x=100)
 features_sets = random_features_sampling(features, n_feature_sets=100, n_features=4)
 
 # Building the trees
