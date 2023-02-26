@@ -26,17 +26,36 @@ categorical_features = ["Pclass", "Sex", "Embarked"]
 input_dataframe = input_dataframe.drop(["PassengerId", "Name", "Ticket", "Cabin"], axis=1)
 
 # Train Test Split
-# 90% is training and 10% is testing
-train_test_percentage_split = int(0.9 * len(input_dataframe))
+survived = 0
+not_survived = 0
 
-training_data = input_dataframe.iloc[:train_test_percentage_split, :]
-testing_data = input_dataframe.iloc[train_test_percentage_split:, :]
+category_limit = 350
+testing_length = 100
 
-'''Implementing Random Forests'''
+training_data = pd.DataFrame(columns=features)
+testing_data = pd.DataFrame(columns=features)
 
+for index_value in range(len(input_dataframe)):
+    row = input_dataframe.iloc[index_value, 0]
+    df = input_dataframe.iloc[index_value]
+
+    if row == 0 and not_survived < category_max:
+        not_survived += 1
+        training_data = training_data.append(df, ignore_index=True)
+
+    elif row == 1 and survived < category_max:
+        survived += 1
+        training_data = training_data.append(df, ignore_index=True)
+
+    else:
+        if testing_length > len(testing_data):
+            testing_data = testing_data.append(df, ignore_index=True)
+
+# Calculates the entropy for a list of predictions(y-data)
 def entropy(class_distribution_data):
     survived = []
     not_survived = []
+
     for output_label in class_distribution_data:
         if output_label == 0:
             not_survived.append(output_label)
@@ -48,6 +67,7 @@ def entropy(class_distribution_data):
 
     if survived_probability == 1.0 or not_survived_probability == 1.0:
         Entropy = 0
+
     else:
         Entropy = -(survived_probability * math.log2(survived_probability)) - (not_survived_probability * math.log2(not_survived_probability))
     
@@ -58,7 +78,8 @@ def information_gain(parent_node_classes, children_y):
     # Calculating Information Gain
     parent_entropy = entropy(parent_node_classes)
 
-    for data in children_y:
+    for data_index in range(0, len(children_y)):
+        data = children_y[data_index]
         child_node_entropy = entropy(data)
 
         children_node_weighted_entropys = []
@@ -90,9 +111,8 @@ def bagging(input_dataset, x):
         # Bagging(Bootstrap Aggregating) is a statistical method where we can sample with replacement n new datasets of length x from an dataset of length x
         bootstrapped_dataset = input_dataset.sample(n=len(input_dataset))
 
-        X_bootstrapped_dataset = bootstrapped_dataset.drop("Survived", axis=1)
         y_bootstrapped_dataset = bootstrapped_dataset["Survived"]
-
+        X_bootstrapped_dataset = bootstrapped_dataset.drop("Survived", axis=1)
 
         X_bootstrapped_datasets.append(X_bootstrapped_dataset)
         y_bootstrapped_datasets.append(y_bootstrapped_dataset)
@@ -103,14 +123,14 @@ def bagging(input_dataset, x):
 
 # A function for finding the best feature for splitting a parent node into children nodes
 def perform_best_node_split(feature_set, X_data, y_data):
-    global X_column, classes
+    global X_column, classes, numerical_features_average_values
+
     features_information_gain = []
     children_node_data = []
 
     for feature in feature_set:
         if feature in categorical_features:
             # If the feature is categorial, this is performed:
-
             X_column =  X_data[feature]
 
             # Getting all categories for a specific column in inout data
@@ -180,7 +200,6 @@ def perform_best_node_split(feature_set, X_data, y_data):
                     child_X_data = X_data.iloc[feature]
                     child_X_data = {'Pclass' : child_X_data["Pclass"], 'Sex' : child_X_data["Sex"], 'Age' : child_X_data["Age"], 'SibSp' : child_X_data["SibSp"], 'Parch': child_X_data["Parch"], 'Fare' : child_X_data["Fare"], 'Embarked' : child_X_data["Embarked"]}
                     right_X_dataframe = right_X_dataframe.append(child_X_data, ignore_index=True)
-            
 
             children_node_X.append(left_X_dataframe)
             children_node_X.append(right_X_dataframe)
@@ -208,9 +227,10 @@ def perform_best_node_split(feature_set, X_data, y_data):
 '''Building out the Random Forest'''
 
 class Node(object):
-    def __init__(self, data):
+    def __init__(self, data, split_feature=None):
         self.data = data
         self.children = []
+        self.split_feature = split_feature
     
     def add_child(self, node):
         self.children.append(node)
@@ -225,13 +245,12 @@ def building_decision_tree(feature_set, X_data, y_data, depth, terminal_node=Fal
     children_node_data = []
     children_nodes = []
 
-    features_used = []
-
     iteration = 0
     while terminal_node == False and len(feature_set) > 0:
         if iteration == 0:
             # For the first split in the tree, we will split from the singular root node using only 1 feature
             children_X_data, children_y_data, child_optimal_feature = perform_best_node_split(feature_set, X_data, y_data)
+            root_node.split_feature = child_optimal_feature
 
             for (child_node_X, child_node_y) in zip(children_X_data, children_y_data):
                 child_node_data = [child_node_X, child_node_y]
@@ -246,7 +265,6 @@ def building_decision_tree(feature_set, X_data, y_data, depth, terminal_node=Fal
                 root_node.add_child(child_node)
 
             feature_set.remove(child_optimal_feature)
-            features_used.append(child_optimal_feature)
 
             depth -= 1
             iteration += 1
@@ -275,8 +293,9 @@ def building_decision_tree(feature_set, X_data, y_data, depth, terminal_node=Fal
                     parent_node = parent_nodes[index]
 
                     children_X_data, children_y_data, child_optimal_feature = perform_best_node_split(feature_set, parent_X_data, parent_y_data)
+                    parent_node.split_feature = child_optimal_feature
+
                     feature_set.remove(child_optimal_feature)
-                    features_used.append(child_optimal_feature)
 
                     for (child_node_X, child_node_y) in zip(children_X_data, children_y_data):
                         child_node_data = [child_node_X, child_node_y]
@@ -291,75 +310,108 @@ def building_decision_tree(feature_set, X_data, y_data, depth, terminal_node=Fal
         else:
             terminal_node = True
 
-    return root_node, features_used
-
+    return root_node
 
 def random_forest(features_sets, X_dataset, y_dataset, depth):
     trees = []
-    features = []
     for index in range(0, len(features_sets)):
         X_data = X_dataset[index]
         y_data = y_dataset[index]
         features_set = features_sets[index]
 
-        root_node, features_used = building_decision_tree(features_set, X_data, y_data, depth)
+        root_node = building_decision_tree(features_set, X_data, y_data, depth)
         trees.append(root_node)
-        features.append(features_used)
 
-    return trees, features
+    return trees
 
 # Parameters for Random Forest
 max_depth = 4
-min_sample_split = 50
+min_sample_split = 25
+num_decision_trees = 100
 
 # Sampling feature sets and X and y data for building the trees
-X_dataset, y_dataset = bagging(training_data, x=100)
-features_sets = random_features_sampling(features, n_feature_sets=100, n_features=4)
+X_dataset, y_dataset = bagging(training_data, x=num_decision_trees)
+features_sets = random_features_sampling(features, n_feature_sets=num_decision_trees, n_features=max_depth)
 
 # Building the trees
-trees, features_set = random_forest(features_sets, X_dataset, y_dataset, max_depth)
+trees = random_forest(features_sets, X_dataset, y_dataset, max_depth)
 
-# Traversing through the trees
-tree_num = 1
-for index in range(0, len(trees)):
-    # Retrieving the root node of tree and the features used in the tree
-    root_node = trees[index]
-    features = features_set[index]
+def clear_decision_tree_data(trees):
+    # Clearing training data from each node of the decision trees
+    for root_node in trees:
+        # Clearing the root node's data and finding the first set of children nodes
+        root_node.data = []
+        children_nodes = root_node.children
 
-    print("-----Tree #{}------".format(tree_num))
+        while len(children_nodes) > 0:
+            # setting the children nodes to parent nodes as they are going to be split further
+            parent_nodes = children_nodes
+            # reinitialize children_nodes to store the new child nodes
+            children_nodes = []
 
-    # Initializing the first set of children nodes breaking down from the root node
-    children_nodes = root_node.children
+            for parent_node in parent_nodes:
+                # get the children of the current node and append them to children_nodes as long as (current_node).children is not empty
+                child_nodes = parent_node.children
+                if len(child_nodes) > 0:
+                    parent_node.data = []
+                    for child_node in child_nodes:
+                        children_nodes.append(child_node)
+                else:
+                    parent_y_data = parent_node.data[1]
+                    parent_node.data = int(max(set(parent_y_data), key = parent_y_data.count))
 
-    print("Layer #1")
-    print(root_node, features[0])
+clear_decision_tree_data(trees)
 
-    features.remove(features[0])
-    layer = 1
+# Preparing testing data for predictions
+ground_truth = testing_data["Survived"]
+X_data = testing_data.drop("Survived", axis=1)
 
-    while len(children_nodes) > 0:
-        # setting the children nodes to parent nodes as they are going to be split further
-        parent_nodes = children_nodes
-        # reinitialize children_nodes to store the new child nodes
-        children_nodes = []
+def testing_random_forest(trees, row, X_data):
+    tree_preds = []
+    for index in range(0, len(trees)):
+        node = trees[index]
+        
+        while len(node.children) != 0:
+            feature = node.split_feature
+            children_nodes = node.children
 
-        layer += 1
-        print("Layer #{}".format(layer))
+            if feature in categorical_features:
+                row_feature_value = int(row[feature])
+     
+                if len(children_nodes) == 2:
+                    classes = [0, 1]
+                else:
+                    classes = [1, 2, 3]
 
-        for parent_node in parent_nodes:
-            # If there are still features left in the used features set, then we print the current node and it's split feature
-            if len(features) > 0:
-                print(parent_node, features[0])
-                features.remove(features[0])
-
-            # else simply print the current node
+                node = children_nodes[classes.index(row_feature_value)]
+                    
             else:
-                print(parent_node)
+                feature_column = X_data[feature]
+                average_value = feature_column.mean()
 
-            # get the children of the current node and append them to children_nodes as long as (current_node).children is not empty
-            child_nodes = parent_node.children
-            if len(child_nodes) > 0:
-                for child_node in child_nodes:
-                    children_nodes.append(child_node)
+                row_feature_value = row[feature]
+                
+                if row_feature_value <= average_value:
+                    index = 0
+                else:
+                    index = 1
+                
+                node = children_nodes[index]
 
-    tree_num += 1
+        tree_pred = node.data
+        tree_preds.append(tree_pred)
+
+    random_forest_pred = int(max(set(tree_preds), key = tree_preds.count))
+
+    return random_forest_pred
+
+accurate_preds = 0
+for index in range(len(X_data)):
+    X_row = X_data.iloc[index]
+    pred = testing_random_forest(trees, X_row, X_data)
+
+    if ground_truth[index] == pred:
+        accurate_preds += 1
+
+accuracy = int(accurate_preds / len(X_data) * 100)
+print("The accuracy of Random Forest on 100 test samples is {}%".format(accuracy))
