@@ -25,33 +25,44 @@ categorical_features = ["Pclass", "Sex", "Embarked"]
 
 input_dataframe = input_dataframe.drop(["PassengerId", "Name", "Ticket", "Cabin"], axis=1)
 
-# Train Test Split
-survived = 0
-not_survived = 0
+def input_data_balancing(input_dataframe, new_dataframe, class_max):
+    # Train Test Split
+    survived = 0
+    not_survived = 0
 
-category_limit = 350
-testing_length = 100
+    for index_value in range(len(input_dataframe)):
+        column_value = input_dataframe.iloc[index_value, 0]
+        row = input_dataframe.iloc[index_value]
 
+        if column_value == 0 and not_survived < class_max:
+            not_survived += 1
+            new_dataframe = new_dataframe.append(row, ignore_index=True)
+
+        elif column_value == 1 and survived < class_max:
+            survived += 1
+            new_dataframe = new_dataframe.append(row, ignore_index=True)
+
+    return new_dataframe
+
+df = pd.DataFrame(columns=features)
 training_data = pd.DataFrame(columns=features)
 testing_data = pd.DataFrame(columns=features)
 
-for index_value in range(len(input_dataframe)):
-    row = input_dataframe.iloc[index_value, 0]
-    df = input_dataframe.iloc[index_value]
+df = input_data_balancing(input_dataframe, df, class_max=342)
+training_length = int(0.7 * len(df))
 
-    if row == 0 and not_survived < category_max:
-        not_survived += 1
-        training_data = training_data.append(df, ignore_index=True)
+for index in range(len(df)):
+    row = df.sample()
 
-    elif row == 1 and survived < category_max:
-        survived += 1
-        training_data = training_data.append(df, ignore_index=True)
-
+    if index < training_length:
+        training_data = training_data.append(row, ignore_index=True)
     else:
-        if testing_length > len(testing_data):
-            testing_data = testing_data.append(df, ignore_index=True)
+        testing_data = testing_data.append(row, ignore_index=True)
 
-# Calculates the entropy for a list of predictions(y-data)
+testing_data = testing_data.sample(frac=1)
+
+'''Implementing Random Forests'''
+
 def entropy(class_distribution_data):
     survived = []
     not_survived = []
@@ -235,7 +246,7 @@ class Node(object):
     def add_child(self, node):
         self.children.append(node)
 
-def building_decision_tree(feature_set, X_data, y_data, depth, terminal_node=False):
+def building_decision_tree(feature_set, X_data, y_data, terminal_node=False):
     # Concatenating the X & y data to create the input data to be passed to the root node
     input_dataset = [X_data, y_data]
     # Creating the root node using the Node object initialize above this function
@@ -266,11 +277,9 @@ def building_decision_tree(feature_set, X_data, y_data, depth, terminal_node=Fal
 
             feature_set.remove(child_optimal_feature)
 
-            depth -= 1
             iteration += 1
 
         elif iteration >= 1:
-            # Setting the 
             parent_nodes_data = children_node_data
             parent_nodes = children_nodes
 
@@ -312,34 +321,35 @@ def building_decision_tree(feature_set, X_data, y_data, depth, terminal_node=Fal
 
     return root_node
 
-def random_forest(features_sets, X_dataset, y_dataset, depth):
+def random_forest(features_sets, X_dataset, y_dataset):
     trees = []
     for index in range(0, len(features_sets)):
         X_data = X_dataset[index]
         y_data = y_dataset[index]
         features_set = features_sets[index]
 
-        root_node = building_decision_tree(features_set, X_data, y_data, depth)
+        root_node = building_decision_tree(features_set, X_data, y_data)
         trees.append(root_node)
 
     return trees
 
 # Parameters for Random Forest
-max_depth = 4
+num_features = 5
 min_sample_split = 25
-num_decision_trees = 100
+num_decision_trees = 75
 
 # Sampling feature sets and X and y data for building the trees
 X_dataset, y_dataset = bagging(training_data, x=num_decision_trees)
-features_sets = random_features_sampling(features, n_feature_sets=num_decision_trees, n_features=max_depth)
+features_sets = random_features_sampling(features, n_feature_sets=num_decision_trees, n_features=num_features)
 
 # Building the trees
-trees = random_forest(features_sets, X_dataset, y_dataset, max_depth)
+trees = random_forest(features_sets, X_dataset, y_dataset)
 
 def clear_decision_tree_data(trees):
     # Clearing training data from each node of the decision trees
     for root_node in trees:
         # Clearing the root node's data and finding the first set of children nodes
+
         root_node.data = []
         children_nodes = root_node.children
 
@@ -347,7 +357,7 @@ def clear_decision_tree_data(trees):
             # setting the children nodes to parent nodes as they are going to be split further
             parent_nodes = children_nodes
             # reinitialize children_nodes to store the new child nodes
-            children_nodes = []
+            children_nodes = [] 
 
             for parent_node in parent_nodes:
                 # get the children of the current node and append them to children_nodes as long as (current_node).children is not empty
@@ -366,22 +376,24 @@ clear_decision_tree_data(trees)
 ground_truth = testing_data["Survived"]
 X_data = testing_data.drop("Survived", axis=1)
 
+train_X_data = training_data.drop("Survived", axis=1)
+
 def testing_random_forest(trees, row, X_data):
     tree_preds = []
     for index in range(0, len(trees)):
         node = trees[index]
         
-        while len(node.children) != 0:
+        while len(node.children) > 0:
             feature = node.split_feature
             children_nodes = node.children
-
+                                                                                  
             if feature in categorical_features:
                 row_feature_value = int(row[feature])
      
-                if len(children_nodes) == 2:
-                    classes = [0, 1]
-                else:
+                if len(children_nodes) == 3:
                     classes = [1, 2, 3]
+                else:
+                    classes = [0, 1] 
 
                 node = children_nodes[classes.index(row_feature_value)]
                     
@@ -405,13 +417,18 @@ def testing_random_forest(trees, row, X_data):
 
     return random_forest_pred
 
-accurate_preds = 0
-for index in range(len(X_data)):
-    X_row = X_data.iloc[index]
-    pred = testing_random_forest(trees, X_row, X_data)
+def accuracy(trees, X_data):
+    accurate_preds = 0
+    for index in range(len(X_data)):
+        X_row = X_data.iloc[index]
+        pred = testing_random_forest(trees, X_row, X_data)
 
-    if ground_truth[index] == pred:
-        accurate_preds += 1
+        if ground_truth[index] == pred:
+            accurate_preds += 1
+            print(pred)
 
-accuracy = int(accurate_preds / len(X_data) * 100)
-print("The accuracy of Random Forest on 100 test samples is {}%".format(accuracy))
+    accuracy = int(accurate_preds / len(X_data) * 100) 
+    return accuracy
+
+accuracy_percent = accuracy(trees, X_data)
+print(accuracy_percent)
