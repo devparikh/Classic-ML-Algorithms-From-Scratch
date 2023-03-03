@@ -25,6 +25,7 @@ categorical_features = ["Pclass", "Sex", "Embarked"]
 
 input_dataframe = input_dataframe.drop(["PassengerId", "Name", "Ticket", "Cabin"], axis=1)
 
+
 def input_data_balancing(input_dataframe, new_dataframe, class_max):
     # Train Test Split
     survived = 0
@@ -334,7 +335,7 @@ def random_forest(features_sets, X_dataset, y_dataset):
     return trees
 
 # Parameters for Random Forest
-num_features = 5
+num_features = 4
 min_sample_split = 25
 num_decision_trees = 75
 
@@ -376,6 +377,7 @@ clear_decision_tree_data(trees)
 ground_truth = testing_data["Survived"]
 X_data = testing_data.drop("Survived", axis=1)
 
+train_ground_truth = training_data["Survived"]
 train_X_data = training_data.drop("Survived", axis=1)
 
 def testing_random_forest(trees, row, X_data):
@@ -417,18 +419,39 @@ def testing_random_forest(trees, row, X_data):
 
     return random_forest_pred
 
-def accuracy(trees, X_data):
-    accurate_preds = 0
+def precision_recall_and_f1_score(trees, X_data, ground_truth):
+    preds = []
+    true_positives = 0 
+    false_negatives = 0
+    false_positives = 0
+    
     for index in range(len(X_data)):
         X_row = X_data.iloc[index]
         pred = testing_random_forest(trees, X_row, X_data)
+        preds.append(pred)
 
-        if ground_truth[index] == pred:
-            accurate_preds += 1
-            print(pred)
+        if ground_truth[index] == pred and pred == 1:
+            true_positives += 1
 
-    accuracy = int(accurate_preds / len(X_data) * 100) 
-    return accuracy
+        elif ground_truth[index] == 1 and pred == 0:
+            false_negatives += 1
 
-accuracy_percent = accuracy(trees, X_data)
-print(accuracy_percent)
+        elif ground_truth[index] == 0 and pred == 1:
+            false_positives += 1
+    
+    if true_positives == 0:
+        precision = 0
+        recall = 0
+    else:
+        precision = true_positives / (true_positives + false_positives)
+        recall = true_positives / (true_positives + false_negatives)
+
+    if precision == 0:
+        f1_score = 0
+    else: 
+        f1_score = 2 * (precision * recall) / (precision + recall)
+
+    return precision, recall, f1_score
+
+precision, recall, score = precision_recall_and_f1_score(trees, X_data, ground_truth)
+print("The precision is {}, recall is {}, f1 score is {}".format(precision, recall, score))
