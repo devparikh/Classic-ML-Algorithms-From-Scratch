@@ -1,10 +1,8 @@
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import math
 import random
 import numpy as np
-
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -24,7 +22,6 @@ features = ["Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked"]
 categorical_features = ["Pclass", "Sex", "Embarked"]
 
 input_dataframe = input_dataframe.drop(["PassengerId", "Name", "Ticket", "Cabin"], axis=1)
-
 
 def input_data_balancing(input_dataframe, new_dataframe, class_max):
     # Train Test Split
@@ -52,15 +49,20 @@ testing_data = pd.DataFrame(columns=features)
 df = input_data_balancing(input_dataframe, df, class_max=342)
 training_length = int(0.7 * len(df))
 
+survived = 0
+not_survived = 0
 for index in range(len(df)):
-    row = df.sample()
+    column_value = df.iloc[index, -1]
+    row = df.iloc[index]
 
-    if index < training_length:
+    if column_value == 1 and survived < int(training_length / 2):
+        survived += 1
+        training_data = training_data.append(row, ignore_index=True)
+    elif column_value == 0 and not_survived < int(training_length / 2):
+        not_survived += 1
         training_data = training_data.append(row, ignore_index=True)
     else:
         testing_data = testing_data.append(row, ignore_index=True)
-
-testing_data = testing_data.sample(frac=1)
 
 '''Implementing Random Forests'''
 
@@ -337,9 +339,9 @@ def random_forest(features_sets, X_dataset, y_dataset):
 # Parameters for Random Forest
 num_features = 4
 min_sample_split = 25
-num_decision_trees = 75
+num_decision_trees = 50
 
-# Sampling feature sets and X and y data for building the trees
+# Sampling feature sets and X and y data for building the trees 
 X_dataset, y_dataset = bagging(training_data, x=num_decision_trees)
 features_sets = random_features_sampling(features, n_feature_sets=num_decision_trees, n_features=num_features)
 
@@ -375,6 +377,7 @@ clear_decision_tree_data(trees)
 
 # Preparing testing data for predictions
 ground_truth = testing_data["Survived"]
+
 X_data = testing_data.drop("Survived", axis=1)
 
 train_ground_truth = training_data["Survived"]
@@ -395,7 +398,7 @@ def testing_random_forest(trees, row, X_data):
                 if len(children_nodes) == 3:
                     classes = [1, 2, 3]
                 else:
-                    classes = [0, 1] 
+                    classes = [0, 1]
 
                 node = children_nodes[classes.index(row_feature_value)]
                     
@@ -416,42 +419,22 @@ def testing_random_forest(trees, row, X_data):
         tree_preds.append(tree_pred)
 
     random_forest_pred = int(max(set(tree_preds), key = tree_preds.count))
-
     return random_forest_pred
 
-def precision_recall_and_f1_score(trees, X_data, ground_truth):
-    preds = []
-    true_positives = 0 
-    false_negatives = 0
-    false_positives = 0
-    
+def accuracy(trees, X_data, ground_truth):
+    accurate_pred = 0
     for index in range(len(X_data)):
         X_row = X_data.iloc[index]
         pred = testing_random_forest(trees, X_row, X_data)
-        preds.append(pred)
 
-        if ground_truth[index] == pred and pred == 1:
-            true_positives += 1
+        if ground_truth[index] == pred:
+            accurate_pred += 1
 
-        elif ground_truth[index] == 1 and pred == 0:
-            false_negatives += 1
+    accuracy = int((accurate_pred / len(ground_truth)) * 100)
+    return accuracy
 
-        elif ground_truth[index] == 0 and pred == 1:
-            false_positives += 1
-    
-    if true_positives == 0:
-        precision = 0
-        recall = 0
-    else:
-        precision = true_positives / (true_positives + false_positives)
-        recall = true_positives / (true_positives + false_negatives)
+train_accuracy = accuracy(trees, train_X_data, train_ground_truth)
+test_accuracy = accuracy(trees, X_data, ground_truth)
 
-    if precision == 0:
-        f1_score = 0
-    else: 
-        f1_score = 2 * (precision * recall) / (precision + recall)
-
-    return precision, recall, f1_score
-
-precision, recall, score = precision_recall_and_f1_score(trees, X_data, ground_truth)
-print("The precision is {}, recall is {}, f1 score is {}".format(precision, recall, score))
+print(train_accuracy)
+print(test_accuracy)
