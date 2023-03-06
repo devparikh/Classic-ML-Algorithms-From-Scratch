@@ -408,11 +408,10 @@ def testing_random_forest(trees, X_data):
     
     return preds
 
-def accuracy(trees, X_data, ground_truth):
+def accuracy(preds, ground_truth):
     accurate_pred = 0
-    for index in range(len(X_data)):
-        pred = testing_random_forest(trees, X_data)
-
+    for index in range(len(ground_truth)):
+        pred = preds[index]
         if ground_truth[index] == pred:
             accurate_pred += 1
 
@@ -431,17 +430,17 @@ fourth_fold = training_data.iloc[(3 * quarter_length):, :]
 k_fold_data = [first_fold, second_fold, third_fold, fourth_fold]
 
 # Parameters for Random Forest
-num_features_range = [3, 4, 5, 6]
-min_sample_split_range = [25, 50, 75]
+num_features_range = [4, 5, 6]
+min_sample_split_range = [50, 75]
 num_decision_trees_range = [25, 50, 75, 100]
+
+total_configs = 24
 
 configurations = []
 test_accuracies = []
 configs = 0
-combinations_saved = 0
 
-# Calculated that there are about 96 different configurations for the hyperparameters above manually, all though there is probably a way to do this automatically
-while configs < 96 and combinations_saved < 5:
+while configs < 24:
     num_features = random.choice(num_features_range)
     min_sample_split = random.choice(min_sample_split_range)
     num_decision_trees = random.choice(num_decision_trees_range)
@@ -449,7 +448,6 @@ while configs < 96 and combinations_saved < 5:
     configuration = [num_features, min_sample_split, num_decision_trees]
 
     if configuration in configurations:
-        combinations_saved += 1
         continue
 
     else:
@@ -478,10 +476,12 @@ while configs < 96 and combinations_saved < 5:
 
         # Clear the decision and root node data
         clear_decision_tree_data(trees)
-
+        
+        # Making predictions on test set 
         preds = testing_random_forest(trees, test_X_data)
-
-        test_accuracy = accuracy(trees, test_X_data, test_ground_truth)
+        
+        # Calculating test acccuracy
+        test_accuracy = accuracy(preds, test_ground_truth)
         average_test_accuracy += test_accuracy
         
     average_test_accuracy = round(average_test_accuracy / k)
@@ -500,7 +500,6 @@ X_dataset, y_dataset = bagging(training_data, x=num_decision_trees)
 features_sets = random_features_sampling(features, n_feature_sets=num_decision_trees, n_features=num_features)
 
 trees = random_forest(features_sets, X_dataset, y_dataset)
-
 clear_decision_tree_data(trees)
 
 preds = testing_random_forest(trees, test_X_data)
