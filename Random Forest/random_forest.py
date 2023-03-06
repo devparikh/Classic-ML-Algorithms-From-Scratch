@@ -377,8 +377,6 @@ def testing_random_forest(trees, X_data):
                 if feature in categorical_features:
                     row_feature_value = int(row[feature])
 
-                    print(feature, children_nodes)
-
                     if len(children_nodes) == 2 and feature == "Sex":
                         classes = [0, 1]
                         node = children_nodes[classes.index(row_feature_value)]
@@ -439,23 +437,23 @@ num_decision_trees_range = [25, 50, 75, 100]
 
 configurations = []
 test_accuracies = []
-num_same_configs = 0
+configs = 0
+combinations_saved = 0
 
-while True:
+# Calculated that there are about 96 different configurations for the hyperparameters above manually, all though there is probably a way to do this automatically
+while configs < 96 and combinations_saved < 5:
     num_features = random.choice(num_features_range)
     min_sample_split = random.choice(min_sample_split_range)
     num_decision_trees = random.choice(num_decision_trees_range)
 
     configuration = [num_features, min_sample_split, num_decision_trees]
 
-    if configuration in configurations and num_same_configs < 5:
-        num_same_configs += 1
+    if configuration in configurations:
+        combinations_saved += 1
         continue
 
-    elif num_same_configs >= 5:
-        break
-
     else:
+        configs += 1
         configurations.append(configuration)
 
     average_test_accuracy = 0
@@ -506,5 +504,6 @@ trees = random_forest(features_sets, X_dataset, y_dataset)
 clear_decision_tree_data(trees)
 
 preds = testing_random_forest(trees, test_X_data)
+
 test_accuracy = accuracy(trees, test_X_data, test_ground_truth)
 print("The accuracy of the most optimal configuration of Random Forest is {} percent on 95 test samples".format(test_accuracy))
