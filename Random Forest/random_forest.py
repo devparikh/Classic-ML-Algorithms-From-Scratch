@@ -23,6 +23,7 @@ categorical_features = ["Pclass", "Sex", "Embarked"]
 
 input_dataframe = input_dataframe.drop(["PassengerId", "Name", "Ticket", "Cabin"], axis=1)
 
+
 def input_data_balancing(input_dataframe, new_dataframe, class_max):
     # Train Test Split
     survived = 0
@@ -336,18 +337,6 @@ def random_forest(features_sets, X_dataset, y_dataset):
 
     return trees
 
-# Parameters for Random Forest
-num_features = 4
-min_sample_split = 25
-num_decision_trees = 50
-
-# Sampling feature sets and X and y data for building the trees 
-X_dataset, y_dataset = bagging(training_data, x=num_decision_trees)
-features_sets = random_features_sampling(features, n_feature_sets=num_decision_trees, n_features=num_features)
-
-# Building the trees
-trees = random_forest(features_sets, X_dataset, y_dataset)
-
 def clear_decision_tree_data(trees):
     # Clearing training data from each node of the decision trees
     for root_node in trees:
@@ -373,59 +362,58 @@ def clear_decision_tree_data(trees):
                     parent_y_data = parent_node.data[1]
                     parent_node.data = int(max(set(parent_y_data), key = parent_y_data.count))
 
-clear_decision_tree_data(trees)
+def testing_random_forest(trees, X_data):
+    preds = []
+    for index in range(0, len(X_data)):
+        row = X_data.iloc[index]
 
-# Preparing testing data for predictions
-ground_truth = testing_data["Survived"]
+        tree_preds = []
+        for index in range(0, len(trees)):
+            node = trees[index]
+            while len(node.children) > 0:
+                feature = node.split_feature
+                children_nodes = node.children
+                                 
+                if feature in categorical_features:
+                    row_feature_value = int(row[feature])
 
-X_data = testing_data.drop("Survived", axis=1)
+                    print(feature, children_nodes)
 
-train_ground_truth = training_data["Survived"]
-train_X_data = training_data.drop("Survived", axis=1)
+                    if len(children_nodes) == 2 and feature == "Sex":
+                        classes = [0, 1]
+                        node = children_nodes[classes.index(row_feature_value)]
+                    elif len(children_nodes) == 3 and feature == "Embarked" or feature == "Pclass":
+                        classes = [1, 2, 3]
+                        node = children_nodes[classes.index(row_feature_value)]
 
-def testing_random_forest(trees, row, X_data):
-    tree_preds = []
-    for index in range(0, len(trees)):
-        node = trees[index]
-        
-        while len(node.children) > 0:
-            feature = node.split_feature
-            children_nodes = node.children
-                                                                                  
-            if feature in categorical_features:
-                row_feature_value = int(row[feature])
-     
-                if len(children_nodes) == 3:
-                    classes = [1, 2, 3]
+                    else:
+                        node = children_nodes[0]
+                        
                 else:
-                    classes = [0, 1]
+                    feature_column = X_data[feature]
+                    average_value = feature_column.mean()
 
-                node = children_nodes[classes.index(row_feature_value)]
+                    row_feature_value = row[feature]
                     
-            else:
-                feature_column = X_data[feature]
-                average_value = feature_column.mean()
+                    if row_feature_value <= average_value:
+                        index = 0
+                    else:
+                        index = 1
+                    
+                    node = children_nodes[index]
 
-                row_feature_value = row[feature]
-                
-                if row_feature_value <= average_value:
-                    index = 0
-                else:
-                    index = 1
-                
-                node = children_nodes[index]
+            tree_pred = node.data
+            tree_preds.append(tree_pred)
 
-        tree_pred = node.data
-        tree_preds.append(tree_pred)
-
-    random_forest_pred = int(max(set(tree_preds), key = tree_preds.count))
-    return random_forest_pred
+        random_forest_pred = int(max(set(tree_preds), key = tree_preds.count))
+        preds.append(random_forest_pred)
+    
+    return preds
 
 def accuracy(trees, X_data, ground_truth):
     accurate_pred = 0
     for index in range(len(X_data)):
-        X_row = X_data.iloc[index]
-        pred = testing_random_forest(trees, X_row, X_data)
+        pred = testing_random_forest(trees, X_data)
 
         if ground_truth[index] == pred:
             accurate_pred += 1
@@ -433,8 +421,90 @@ def accuracy(trees, X_data, ground_truth):
     accuracy = int((accurate_pred / len(ground_truth)) * 100)
     return accuracy
 
-train_accuracy = accuracy(trees, train_X_data, train_ground_truth)
-test_accuracy = accuracy(trees, X_data, ground_truth)
+# Performing K-Fold Cross Validation using different parameters to find the configuration with the greatest validation accuracy
+k = 4
+quarter_length = int(0.25 * len(training_data))
 
-print(train_accuracy)
-print(test_accuracy)
+first_fold = training_data.iloc[:quarter_length, :]
+second_fold = training_data.iloc[quarter_length:(2 * quarter_length), :]
+third_fold = training_data.iloc[(2 * quarter_length):(3 * quarter_length), :]
+fourth_fold = training_data.iloc[(3 * quarter_length):, :]
+
+k_fold_data = [first_fold, second_fold, third_fold, fourth_fold]
+
+# Parameters for Random Forest
+num_features_range = [3, 4, 5, 6]
+min_sample_split_range = [25, 50, 75]
+num_decision_trees_range = [25, 50, 75, 100]
+
+configurations = []
+test_accuracies = []
+num_same_configs = 0
+
+while True:
+    num_features = random.choice(num_features_range)
+    min_sample_split = random.choice(min_sample_split_range)
+    num_decision_trees = random.choice(num_decision_trees_range)
+
+    configuration = [num_features, min_sample_split, num_decision_trees]
+
+    if configuration in configurations and num_same_configs < 5:
+        num_same_configs += 1
+        continue
+
+    elif num_same_configs >= 5:
+        break
+
+    else:
+        configurations.append(configuration)
+
+    average_test_accuracy = 0
+    for fold in range(0, k):
+        # Creating train and test set for this iteration of the cross_validation for each 
+        test_data = k_fold_data[fold]
+        train_data = pd.DataFrame(columns=features)
+            
+        for dataset in range(0, len(k_fold_data)):
+            if dataset != fold:
+                train_data = train_data.append(k_fold_data[dataset], ignore_index=True)
+
+        test_ground_truth = test_data["Survived"].tolist()
+        test_X_data = test_data.drop("Survived", axis=1)
+
+        # Sampling feature sets and X and y data for building the trees 
+        X_dataset, y_dataset = bagging(train_data, x=num_decision_trees)
+        features_sets = random_features_sampling(features, n_feature_sets=num_decision_trees, n_features=num_features)
+
+        # Building the trees
+        trees = random_forest(features_sets, X_dataset, y_dataset)
+
+        # Clear the decision and root node data
+        clear_decision_tree_data(trees)
+
+        preds = testing_random_forest(trees, test_X_data)
+
+        test_accuracy = accuracy(trees, test_X_data, test_ground_truth)
+        average_test_accuracy += test_accuracy
+        
+    average_test_accuracy = round(average_test_accuracy / k)
+    test_accuracies.append(average_test_accuracy)
+
+most_optimal_hyperparam_config = configurations[configurations.index(max(test_accuracies))]
+
+num_features = most_optimal_hyperparam_config[0]
+min_sample_split = most_optimal_hyperparam_config[1]
+num_decision_trees = most_optimal_hyperparam_config[2]
+
+test_ground_truth = testing_data["Survived"]
+test_X_data = testing_data.drop("Survived", axis=1)
+
+X_dataset, y_dataset = bagging(training_data, x=num_decision_trees)
+features_sets = random_features_sampling(features, n_feature_sets=num_decision_trees, n_features=num_features)
+
+trees = random_forest(features_sets, X_dataset, y_dataset)
+
+clear_decision_tree_data(trees)
+
+preds = testing_random_forest(trees, test_X_data)
+test_accuracy = accuracy(trees, test_X_data, test_ground_truth)
+print("The accuracy of the most optimal configuration of Random Forest is {} percent on 95 test samples".format(test_accuracy))
