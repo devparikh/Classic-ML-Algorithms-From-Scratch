@@ -23,47 +23,33 @@ categorical_features = ["Pclass", "Sex", "Embarked"]
 
 input_dataframe = input_dataframe.drop(["PassengerId", "Name", "Ticket", "Cabin"], axis=1)
 
-
-def input_data_balancing(input_dataframe, new_dataframe, class_max):
+def input_data_balancing(input_dataframe, dataframe_2, dataframe_1, has_second_dataframe, class_max):
     # Train Test Split
     survived = 0
     not_survived = 0
 
     for index_value in range(len(input_dataframe)):
-        column_value = input_dataframe.iloc[index_value, 0]
+        column_value = input_dataframe.loc[index_value, "Survived"]
         row = input_dataframe.iloc[index_value]
 
         if column_value == 0 and not_survived < class_max:
             not_survived += 1
-            new_dataframe = new_dataframe.append(row, ignore_index=True)
+            dataframe_1 = dataframe_1.append(row, ignore_index=True)
 
         elif column_value == 1 and survived < class_max:
             survived += 1
-            new_dataframe = new_dataframe.append(row, ignore_index=True)
+            dataframe_1 = dataframe_1.append(row, ignore_index=True)
 
-    return new_dataframe
+        else:
+            if has_second_dataframe == True:
+                dataframe_2 = dataframe_2.append(row, ignore_index=True)
 
-df = pd.DataFrame(columns=features)
-training_data = pd.DataFrame(columns=features)
-testing_data = pd.DataFrame(columns=features)
+    return dataframe_1, dataframe_2
 
-df = input_data_balancing(input_dataframe, df, class_max=342)
-training_length = int(0.7 * len(df))
+df1 = pd.DataFrame(columns=features)   
+df2 = pd.DataFrame(columns=features) 
 
-survived = 0
-not_survived = 0
-for index in range(len(df)):
-    column_value = df.iloc[index, -1]
-    row = df.iloc[index]
-
-    if column_value == 1 and survived < int(training_length / 2):
-        survived += 1
-        training_data = training_data.append(row, ignore_index=True)
-    elif column_value == 0 and not_survived < int(training_length / 2):
-        not_survived += 1
-        training_data = training_data.append(row, ignore_index=True)
-    else:
-        testing_data = testing_data.append(row, ignore_index=True)
+data, other_data = input_data_balancing(input_dataframe, df1, df2, has_second_dataframe=False, class_max=342)
 
 '''Implementing Random Forests'''
 
@@ -417,6 +403,7 @@ def accuracy(preds, ground_truth):
 
     accuracy = int((accurate_pred / len(ground_truth)) * 100)
     return accuracy
+
 # Performing K-Fold Cross Validation using different parameters to find the configuration with the greatest validation accuracy
 
 k = 4
