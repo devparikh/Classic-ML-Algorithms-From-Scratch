@@ -417,42 +417,43 @@ def accuracy(preds, ground_truth):
 
     accuracy = int((accurate_pred / len(ground_truth)) * 100)
     return accuracy
-
 # Performing K-Fold Cross Validation using different parameters to find the configuration with the greatest validation accuracy
+
 k = 4
-quarter_length = int(0.25 * len(training_data))
-
-first_fold = training_data.iloc[:quarter_length, :]
-second_fold = training_data.iloc[quarter_length:(2 * quarter_length), :]
-third_fold = training_data.iloc[(2 * quarter_length):(3 * quarter_length), :]
-fourth_fold = training_data.iloc[(3 * quarter_length):, :]
-
-k_fold_data = [first_fold, second_fold, third_fold, fourth_fold]
 
 # Parameters for Random Forest
 num_features_range = [4, 5, 6]
-min_sample_split_range = [50, 75]
-num_decision_trees_range = [25, 50, 75, 100]
-
-total_configs = 24
+min_sample_split_range = [25, 50]
+num_decision_trees_range = [25, 50, 75, 100, 125, 150]
+training_percentage_range = [0.7, 0.8, 0.85, 0.9]
 
 configurations = []
 test_accuracies = []
-configs = 0
 
-while configs < 24:
-    num_features = random.choice(num_features_range)
-    min_sample_split = random.choice(min_sample_split_range)
-    num_decision_trees = random.choice(num_decision_trees_range)
+for num_features in num_features_range:
+    for min_sample_split in min_sample_split_range:
+        for num_decision_trees in num_decision_trees_range: 
+            for training_percentage in training_percentage_range:
+                configuration = [num_features, min_sample_split, num_decision_trees, training_percentage]
+                configurations.append(configuration)
 
-    configuration = [num_features, min_sample_split, num_decision_trees]
+for configuration in configurations:
+    training_data = pd.DataFrame(columns=features)
+    testing_data = pd.DataFrame(columns=features)
 
-    if configuration in configurations:
-        continue
+    training_percentage = configuration[-1]
 
-    else:
-        configs += 1
-        configurations.append(configuration)
+    training_length = int(training_percentage * len(data))
+    training_data, testing_data = input_data_balancing(data, testing_data, training_data, has_second_dataframe=True, class_max=239)
+
+    quarter_length = int(0.25 * len(training_data))
+
+    first_fold = training_data.iloc[:quarter_length, :]
+    second_fold = training_data.iloc[quarter_length:(2 * quarter_length), :]
+    third_fold = training_data.iloc[(2 * quarter_length):(3 * quarter_length), :]
+    fourth_fold = training_data.iloc[(3 * quarter_length):, :]
+
+    k_fold_data = [first_fold, second_fold, third_fold, fourth_fold]
 
     average_test_accuracy = 0
     for fold in range(0, k):
@@ -476,18 +477,16 @@ while configs < 24:
 
         # Clear the decision and root node data
         clear_decision_tree_data(trees)
-        
-        # Making predictions on test set 
+
         preds = testing_random_forest(trees, test_X_data)
-        
-        # Calculating test acccuracy
-        test_accuracy = accuracy(preds, test_ground_truth)
+
+        test_accuracy = accuracy(preds, test_ground_truth) 
         average_test_accuracy += test_accuracy
         
     average_test_accuracy = round(average_test_accuracy / k)
     test_accuracies.append(average_test_accuracy)
 
-most_optimal_hyperparam_config = configurations[configurations.index(max(test_accuracies))]
+most_optimal_hyperparam_config = configurations[test_accuracies.index(max(test_accuracies))]
 
 num_features = most_optimal_hyperparam_config[0]
 min_sample_split = most_optimal_hyperparam_config[1]
@@ -500,9 +499,10 @@ X_dataset, y_dataset = bagging(training_data, x=num_decision_trees)
 features_sets = random_features_sampling(features, n_feature_sets=num_decision_trees, n_features=num_features)
 
 trees = random_forest(features_sets, X_dataset, y_dataset)
+
 clear_decision_tree_data(trees)
 
-preds = testing_random_forest(trees, test_X_data)
+test_preds = testing_random_forest(trees, test_X_data)
 
-test_accuracy = accuracy(trees, test_X_data, test_ground_truth)
+test_accuracy = accuracy(test_preds, test_ground_truth)
 print("The accuracy of the most optimal configuration of Random Forest is {} percent on 95 test samples".format(test_accuracy))
