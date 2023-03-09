@@ -305,9 +305,7 @@ def building_decision_tree(feature_set, X_data, y_data, terminal_node=False):
                 # if the conditions are not meet, the parent nodes become leaf nodes and the tree is built
                 else:
                     terminal_node = True
-        else:
-            terminal_node = True
-
+                    
     return root_node
 
 def random_forest(features_sets, X_dataset, y_dataset):
