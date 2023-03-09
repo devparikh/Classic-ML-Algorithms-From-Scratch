@@ -498,3 +498,6 @@ test_preds = testing_random_forest(trees, test_X_data)
 
 test_accuracy = accuracy(test_preds, test_ground_truth)
 print("The accuracy of the most optimal configuration of Random Forest is {} percent on {} test samples".format(test_accuracy, len(test_ground_truth)))
+
+# The average testing accuracy from running 4 instances of this model was 91%, where 3 instances had 193 testing samples and the other had 267 testing samples.
+# The individual testing accuracies were 100%, 98%, 88%, 78%
