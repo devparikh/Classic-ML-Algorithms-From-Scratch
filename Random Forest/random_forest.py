@@ -301,10 +301,8 @@ def building_decision_tree(feature_set, X_data, y_data, terminal_node=False):
                         children_node_data.append(child_node_data)
                         children_nodes.append(child_node)
                         parent_node.add_child(child_node)
-
-                # if the conditions are not meet, the parent nodes become leaf nodes and the tree is built
-                else:
-                    terminal_node = True
+    else:
+        terminal_node = True
                     
     return root_node
 
