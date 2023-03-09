@@ -4,7 +4,6 @@ import math
 import random
 import numpy as np
 import warnings
-
 warnings.filterwarnings("ignore")
 
 '''Loading Data + Data Preprocessing'''
@@ -124,7 +123,8 @@ def bagging(input_dataset, x):
 
 # A function for finding the best feature for splitting a parent node into children nodes
 def perform_best_node_split(feature_set, X_data, y_data):
-    global X_column, classes
+    global X_column, classes, numerical_features_average_values
+
     features_information_gain = []
     children_node_data = []
 
@@ -301,9 +301,10 @@ def building_decision_tree(feature_set, X_data, y_data, terminal_node=False):
                         children_node_data.append(child_node_data)
                         children_nodes.append(child_node)
                         parent_node.add_child(child_node)
-    else:
-        terminal_node = True
-                    
+                        
+        else:
+            terminal_node = True
+
     return root_node
 
 def random_forest(features_sets, X_dataset, y_dataset):
@@ -476,9 +477,9 @@ training_length = most_optimal_hyperparam_config[2]
 
 training_data = pd.DataFrame(columns=features)
 testing_data = pd.DataFrame(columns=features)
-training_length = int(training_length * len(input_dataframe))
+training_length = int(training_length * len(data))
 
-training_data, testing_data = input_data_balancing(input_dataframe, training_data, testing_data, has_second_dataframe=True, class_max=(training_length / 2))
+training_data, testing_data = input_data_balancing(data, training_data, testing_data, has_second_dataframe=True, class_max=(training_length / 2))
 
 X_dataset, y_dataset = bagging(training_data, x=num_decision_trees)
 features_sets = random_features_sampling(features, n_feature_sets=num_decision_trees, n_features=num_features)
@@ -490,8 +491,14 @@ test_ground_truth = testing_data["Survived"]
 test_X_data = testing_data.drop("Survived", axis=1)
 
 test_preds = testing_random_forest(trees, test_X_data)
-
 test_accuracy = accuracy(test_preds, test_ground_truth)
+
+output_dataframe = pd.DataFrame(columns=["Ground Truth", "Predictions"])
+ 
+output_dataframe["Ground Truth"] = test_ground_truth
+output_dataframe["Predictions"] = test_preds
+output_dataframe.to_csv("output_4.csv")
+
 print("The accuracy of the most optimal configuration of Random Forest is {} percent on {} test samples".format(test_accuracy, len(test_ground_truth)))
 
 # The average testing accuracy from running 4 instances of this model was 91%, where 3 instances had 193 testing samples and the other had 267 testing samples.
