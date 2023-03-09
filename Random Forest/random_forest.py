@@ -124,8 +124,7 @@ def bagging(input_dataset, x):
 
 # A function for finding the best feature for splitting a parent node into children nodes
 def perform_best_node_split(feature_set, X_data, y_data):
-    global X_column, classes, numerical_features_average_values
-
+    global X_column, classes
     features_information_gain = []
     children_node_data = []
 
