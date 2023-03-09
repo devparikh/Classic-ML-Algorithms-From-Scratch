@@ -405,32 +405,31 @@ def accuracy(preds, ground_truth):
     return accuracy
 
 # Performing K-Fold Cross Validation using different parameters to find the configuration with the greatest validation accuracy
-
 k = 4
+min_sample_split = 25
 
 # Parameters for Random Forest
 num_features_range = [4, 5, 6]
-min_sample_split_range = [25, 50]
-num_decision_trees_range = [25, 50, 75, 100, 125, 150]
-training_percentage_range = [0.7, 0.8, 0.85, 0.9]
+num_decision_trees_range = [25, 50, 75, 100]
+training_percentage_range = [0.7, 0.8, 0.9]
 
 configurations = []
 test_accuracies = []
 
 for num_features in num_features_range:
-    for min_sample_split in min_sample_split_range:
         for num_decision_trees in num_decision_trees_range: 
             for training_percentage in training_percentage_range:
-                configuration = [num_features, min_sample_split, num_decision_trees, training_percentage]
+                configuration = [num_features, num_decision_trees, training_percentage]
                 configurations.append(configuration)
 
+configuration_iteration = 0 
 for configuration in configurations:
+    configuration_iteration += 1
+    print("The number of configurations considered thus far is", configuration_iteration)
     training_data = pd.DataFrame(columns=features)
     testing_data = pd.DataFrame(columns=features)
 
-    training_percentage = configuration[-1]
-
-    training_length = int(training_percentage * len(data))
+    training_length = int(configuration[-1] * len(data))
     training_data, testing_data = input_data_balancing(data, testing_data, training_data, has_second_dataframe=True, class_max=239)
 
     quarter_length = int(0.25 * len(training_data))
@@ -458,7 +457,7 @@ for configuration in configurations:
         # Sampling feature sets and X and y data for building the trees 
         X_dataset, y_dataset = bagging(train_data, x=num_decision_trees)
         features_sets = random_features_sampling(features, n_feature_sets=num_decision_trees, n_features=num_features)
-
+ 
         # Building the trees
         trees = random_forest(features_sets, X_dataset, y_dataset)
 
@@ -471,25 +470,31 @@ for configuration in configurations:
         average_test_accuracy += test_accuracy
         
     average_test_accuracy = round(average_test_accuracy / k)
+    print("This configurations average test accuracy is", average_test_accuracy)
     test_accuracies.append(average_test_accuracy)
 
 most_optimal_hyperparam_config = configurations[test_accuracies.index(max(test_accuracies))]
 
 num_features = most_optimal_hyperparam_config[0]
-min_sample_split = most_optimal_hyperparam_config[1]
-num_decision_trees = most_optimal_hyperparam_config[2]
+num_decision_trees = most_optimal_hyperparam_config[1]
+training_length = most_optimal_hyperparam_config[2]
 
-test_ground_truth = testing_data["Survived"]
-test_X_data = testing_data.drop("Survived", axis=1)
+training_data = pd.DataFrame(columns=features)
+testing_data = pd.DataFrame(columns=features)
+training_length = int(training_length * len(input_dataframe))
+
+training_data, testing_data = input_data_balancing(input_dataframe, training_data, testing_data, has_second_dataframe=True, class_max=(training_length / 2))
 
 X_dataset, y_dataset = bagging(training_data, x=num_decision_trees)
 features_sets = random_features_sampling(features, n_feature_sets=num_decision_trees, n_features=num_features)
 
 trees = random_forest(features_sets, X_dataset, y_dataset)
-
 clear_decision_tree_data(trees)
+
+test_ground_truth = testing_data["Survived"]
+test_X_data = testing_data.drop("Survived", axis=1)
 
 test_preds = testing_random_forest(trees, test_X_data)
 
 test_accuracy = accuracy(test_preds, test_ground_truth)
-print("The accuracy of the most optimal configuration of Random Forest is {} percent on 95 test samples".format(test_accuracy))
+print("The accuracy of the most optimal configuration of Random Forest is {} percent on {} test samples".format(test_accuracy, len(test_ground_truth)))
