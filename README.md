@@ -26,7 +26,6 @@ K-Means Clustering is an algorithm that attempts to find the most optimal cluste
 **Elbow Method:**
 For K-Means Clustering to find the most optimal K value, you can train the model for a range of K values and calculate the inertia for each configuration. The inertia is simply the total within-cluster sum of distance for every cluster in a configuration, and is a measure of the quality of clustered output. I noticed that if I can the script multiple times, the results weren't entirely consistent, so I decided to find the most optimal K value 100 times and K value that was most consistent throughout the test is choosen for training. 
 
-
 # Random Forest
 
 **What is Random Forest and how does the algorithm work?** 
@@ -41,11 +40,11 @@ For every parent node in the decision tree, you want to find a feature that will
 
 **Entropy:**
 
-![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/b7e21cd1-4ac2-497a-98d2-188c4e02f478/Untitled.png)
+![Untitled](Untitled.png)
 
 The metric used in this implementation for measuring the uniformity of data of is as Entropy, which is the measure of disorder or uncertainity in a dataset. This means that a higher entropy value would mean greater disorder or less uniformity in data, making any predictions from it more uncertain. An entropy value of 0.0 in the case of 2 classes, would mean that the dataset is entirely uniform(completely 0 or 1), and on the other hand an entropy value of 1.0 would imply that the disorder/uncertainity in the dataset is at it’s peak, or that an equal number of elements are of each class in the data. Any entropy value between 0 and 1 would imply that there is more elements of a particular class than the other classes the data. 
 
-![Screen Shot 2023-01-23 at 10.27.30 PM.png](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/a2141ec2-a9fa-4dc8-b687-072bc0783272/Screen_Shot_2023-01-23_at_10.27.30_PM.png)
+![Screen Shot 2023-01-23 at 10.27.30 PM.png](Screen_Shot_2023-01-23_at_10.27.30_PM.png)
 
 The input of the entropy function, *E* is the input *y* data, *S*. The function takes the negative percentage of elements of class *i* in comparison to the length of *S* and multiples this with the logarithm(base 2) of this percentage*.* This is performed for very class in the input data.
 
@@ -53,7 +52,7 @@ The input of the entropy function, *E* is the input *y* data, *S*. The function 
 
 The goal of the decision tree is to reduce the entropy value as nodes get split into children nodes, so the most optimal split would be when the difference between the parent node’s entropy and the weighted average of the children node’s entropy is maximized. This is what Information Gain is.
 
-![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/548c975a-92a0-4945-a689-cf58b6b11079/Untitled.png)
+![Untitled](Untitled.png)
 
 Information Gain is calculated by subtracting the weighted average entropy of the children nodes, where Y represents the parent node’s data, and Y|X represents the collective data of the children nodes. 
 
@@ -62,8 +61,6 @@ At every split in the tree, we are selecting the highest information gain for ev
 **How did I implement the algorithm step-by-step, and what were some interesting patterns/techniques and lessons I learnt throughout the process?**
 
 **Implementation Process:**
-
-Here are the general steps for how I implemented this project:
 
 1. Loading, Preprocessing and Balancing Data
 2. Build a function to calculate *Entropy* and integrating that into another function for calculating *Information* *Gain*.
