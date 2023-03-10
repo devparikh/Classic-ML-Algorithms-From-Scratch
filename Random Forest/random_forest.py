@@ -1,5 +1,4 @@
 import pandas as pd
-import matplotlib.pyplot as plt
 import math
 import random
 import numpy as np
@@ -466,8 +465,8 @@ for configuration in configurations:
         average_test_accuracy += test_accuracy
         
     average_test_accuracy = round(average_test_accuracy / k)
-    print("This configurations average test accuracy is", average_test_accuracy)
     test_accuracies.append(average_test_accuracy)
+    print("This configurations average test accuracy is", average_test_accuracy)
 
 most_optimal_hyperparam_config = configurations[test_accuracies.index(max(test_accuracies))]
 
