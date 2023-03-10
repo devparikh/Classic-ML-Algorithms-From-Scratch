@@ -52,8 +52,6 @@ Information Gain is calculated by subtracting the weighted average entropy of th
 
 At every split in the tree, we are selecting the highest information gain for every feature remaining in the feature set. 
 
-**How did I implement the algorithm step-by-step, and what were some interesting patterns/techniques and lessons I learnt throughout the process?**
-
 **Implementation Process:**
 
 1. Loading, Preprocessing and Balancing Data
