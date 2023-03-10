@@ -40,7 +40,7 @@ For every parent node in the decision tree, you want to find a feature that will
 
 **Entropy:**
 
-![Untitled](Untitled.png)
+![Entropy](https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.hackerearth.com%2Fpractice%2Fmachine-learning%2Fmachine-learning-algorithms%2Fml-decision-tree%2Ftutorial%2F&psig=AOvVaw0nT_4A5bRjkQm2jbFHe5z0&ust=1678563857473000&source=images&cd=vfe&ved=0CBAQjRxqFwoTCLi3ieiP0v0CFQAAAAAdAAAAABAY)
 
 The metric used in this implementation for measuring the uniformity of data of is as Entropy, which is the measure of disorder or uncertainity in a dataset. This means that a higher entropy value would mean greater disorder or less uniformity in data, making any predictions from it more uncertain. An entropy value of 0.0 in the case of 2 classes, would mean that the dataset is entirely uniform(completely 0 or 1), and on the other hand an entropy value of 1.0 would imply that the disorder/uncertainity in the dataset is at it’s peak, or that an equal number of elements are of each class in the data. Any entropy value between 0 and 1 would imply that there is more elements of a particular class than the other classes the data. 
 
