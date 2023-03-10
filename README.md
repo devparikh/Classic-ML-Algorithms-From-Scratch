@@ -27,7 +27,7 @@ K-Means Clustering is an algorithm that attempts to find the most optimal cluste
 For K-Means Clustering to find the most optimal K value, you can train the model for a range of K values and calculate the inertia for each configuration. The inertia is simply the total within-cluster sum of distance for every cluster in a configuration, and is a measure of the quality of clustered output. I noticed that if I can the script multiple times, the results weren't entirely consistent, so I decided to find the most optimal K value 100 times and K value that was most consistent throughout the test is choosen for training. 
 
 
-#Random Forest
+# Random Forest
 
 **What is Random Forest and how does the algorithm work?** 
 
