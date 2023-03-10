@@ -40,19 +40,13 @@ For every parent node in the decision tree, you want to find a feature that will
 
 **Entropy:**
 
-![Entropy](https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.hackerearth.com%2Fpractice%2Fmachine-learning%2Fmachine-learning-algorithms%2Fml-decision-tree%2Ftutorial%2F&psig=AOvVaw0nT_4A5bRjkQm2jbFHe5z0&ust=1678563857473000&source=images&cd=vfe&ved=0CBAQjRxqFwoTCLi3ieiP0v0CFQAAAAAdAAAAABAY)
-
 The metric used in this implementation for measuring the uniformity of data of is as Entropy, which is the measure of disorder or uncertainity in a dataset. This means that a higher entropy value would mean greater disorder or less uniformity in data, making any predictions from it more uncertain. An entropy value of 0.0 in the case of 2 classes, would mean that the dataset is entirely uniform(completely 0 or 1), and on the other hand an entropy value of 1.0 would imply that the disorder/uncertainity in the dataset is at it’s peak, or that an equal number of elements are of each class in the data. Any entropy value between 0 and 1 would imply that there is more elements of a particular class than the other classes the data. 
-
-![Screen Shot 2023-01-23 at 10.27.30 PM.png](Screen_Shot_2023-01-23_at_10.27.30_PM.png)
 
 The input of the entropy function, *E* is the input *y* data, *S*. The function takes the negative percentage of elements of class *i* in comparison to the length of *S* and multiples this with the logarithm(base 2) of this percentage*.* This is performed for very class in the input data.
 
 **Information Gain:**
 
 The goal of the decision tree is to reduce the entropy value as nodes get split into children nodes, so the most optimal split would be when the difference between the parent node’s entropy and the weighted average of the children node’s entropy is maximized. This is what Information Gain is.
-
-![Untitled](Untitled.png)
 
 Information Gain is calculated by subtracting the weighted average entropy of the children nodes, where Y represents the parent node’s data, and Y|X represents the collective data of the children nodes. 
 
@@ -112,3 +106,12 @@ Minimum Number of Samples For Split:
 This wasn’t one of the hyperparameters that would be chosen, as it was already pre-determined to be 25. Essentially, this is one parameter that is used to determine when to stop splitting nodes into children nodes, because every time splits are performed the amount of data in the children nodes decreases, and after a certain point there isn’t enough data in the nodes to be split further, so there needs to be a cut off point where a node without enough data becomes the terminal node. 
 
 In this implementation this parameter was trivial, because it didn’t have a significant impact on the depth of the trees, that was almost entirely dependent on the length of the feature set.
+
+**Results:**
+
+After test 36 different hyperparameter configurations, the model was able to achieve an average accuracy on the test of 95% over 3 instances of the model, with test accuracy of 100%, 98%, 88%. All of those instances had 193 testing samples. 
+
+**Further Improvements:**
+
+- Increasing the efficiency of the model, particularly of the K-Fold Cross Validation is the most important area of improvement. As the cross validation took ∼3.5 hours run 36 configurations, and this was after I had reduced the total number of configurations from 96 configurations which would have taken >9 hours. The reason for the extremely long execution time was that only one configuration is considered at a time, running multiple configurations in parallel would reduce the run time by 2-3x
+- Accuracy is not the most reliable metric for measuring the performance of the models, because it doesn’t account for how many true positives and true negatives and the number of false negatives and false positives predicted individually, its harder to figure out what is causing inaccurate predictions and method to solve the problem
