@@ -1,8 +1,10 @@
 import pandas as pd
+import matplotlib.pyplot as plt
 import math
 import random
 import numpy as np
 import warnings
+from sklearn.metrics import confusion_matrix
 warnings.filterwarnings("ignore")
 
 '''Loading Data + Data Preprocessing'''
@@ -389,27 +391,50 @@ def testing_random_forest(trees, X_data):
     
     return preds
 
-def accuracy(preds, ground_truth):
-    accurate_pred = 0
+def f1_score(preds, ground_truth):
+    true_positives = 0
+    false_positives = 0
+    false_negatives = 0
+    true_negatives = 0
+
     for index in range(len(ground_truth)):
         pred = preds[index]
-        if ground_truth[index] == pred:
-            accurate_pred += 1
+        
+        if ground_truth[index] == pred and pred == 1:
+            true_positives += 1
 
-    accuracy = int((accurate_pred / len(ground_truth)) * 100)
-    return accuracy
+        elif ground_truth[index] == pred and pred == 0:
+            true_negatives += 1
+
+        elif ground_truth[index] != pred and ground_truth[index] == 0:
+            false_positives += 1
+
+        elif ground_truth[index] != pred and ground_truth[index] == 1:
+            false_negatives += 1
+    
+    if true_positives == 0:
+        precision = 0
+        recall = 0
+        f1 = 0
+    else:
+        precision = true_positives / (true_positives + false_positives)
+        recall = true_positives / (true_positives + false_negatives)
+        f1 = 2 * (precision * recall) / (precision + recall)
+        
+    return f1
 
 # Performing K-Fold Cross Validation using different parameters to find the configuration with the greatest validation accuracy
-k = 4
+k = 3
 min_sample_split = 25
 
 # Parameters for Random Forest
-num_features_range = [4, 5, 6]
-num_decision_trees_range = [25, 50, 75, 100]
+num_features_range = [4, 5]
+num_decision_trees_range = [25, 50, 75, 100, 125, 150]
 training_percentage_range = [0.7, 0.8, 0.9]
 
 configurations = []
 test_accuracies = []
+f1_values = []
 
 for num_features in num_features_range:
         for num_decision_trees in num_decision_trees_range: 
@@ -436,7 +461,8 @@ for configuration in configurations:
 
     k_fold_data = [first_fold, second_fold, third_fold, fourth_fold]
 
-    average_test_accuracy = 0
+    average_f1_value = 0
+    zero_f1 = 0
     for fold in range(0, k):
         # Creating train and test set for this iteration of the cross_validation for each 
         test_data = k_fold_data[fold]
@@ -461,14 +487,18 @@ for configuration in configurations:
 
         preds = testing_random_forest(trees, test_X_data)
 
-        test_accuracy = accuracy(preds, test_ground_truth) 
-        average_test_accuracy += test_accuracy
-        
-    average_test_accuracy = round(average_test_accuracy / k)
-    test_accuracies.append(average_test_accuracy)
-    print("This configurations average test accuracy is", average_test_accuracy)
+        f1 = f1_score(preds, test_ground_truth) 
 
-most_optimal_hyperparam_config = configurations[test_accuracies.index(max(test_accuracies))]
+        if f1 != 0: 
+            average_f1_value += f1
+        else:
+            zero_f1 += 1
+        
+    f1_value = float(average_f1_value / (k - zero_f1))
+    print("Average F1 Score:", f1_value)
+    f1_values.append(f1_value)
+
+most_optimal_hyperparam_config = configurations[f1_values.index(max(f1_values))]
 
 num_features = most_optimal_hyperparam_config[0]
 num_decision_trees = most_optimal_hyperparam_config[1]
@@ -490,15 +520,17 @@ test_ground_truth = testing_data["Survived"]
 test_X_data = testing_data.drop("Survived", axis=1)
 
 test_preds = testing_random_forest(trees, test_X_data)
-test_accuracy = accuracy(test_preds, test_ground_truth)
+test_f1_score = f1_score(test_preds, test_ground_truth)
 
 output_dataframe = pd.DataFrame(columns=["Ground Truth", "Predictions"])
  
 output_dataframe["Ground Truth"] = test_ground_truth
 output_dataframe["Predictions"] = test_preds
-output_dataframe.to_csv("output_4.csv")
+output_dataframe.to_csv("output.csv")
 
-print("The accuracy of the most optimal configuration of Random Forest is {} percent on {} test samples".format(test_accuracy, len(test_ground_truth)))
+true_negative, false_positives, false_negatives, true_positives = confusion_matrix(test_ground_truth, test_preds).ravel()
 
+print("The f1 score of the most optimal configuration of Random Forest is {} on {} test samples".format(test_f1_score, len(test_ground_truth)))
+print("True Negatives: {}, False Positives: {}, False Negatives: {}, True Positives {}".format(true_negative, false_positives, false_negatives, true_positives))
 # The average testing accuracy from running 4 instances of this model was 91%, where 3 instances had 193 testing samples and the other had 267 testing samples.
 # The individual testing accuracies were 100%, 98%, 88%, 78%
